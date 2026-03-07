@@ -1,0 +1,36 @@
+# Laravel default
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*.log
+/bootstrap/cache/*
+.phpunit.result.cache
+
+# Docker data (Critical!)
+.docker/data/mysql/*
+.docker/data/redis/*
+.docker/data/meilisearch/*
+.docker/data/mailpit/*
+
+# Environment & Backups (Super Critical!)
+.env
+.env.backup
+/backups/*
+!/backups/cron_health.log
+ASSETS_REQUIRED.txt
+.zencoder/*
+.zenflow/*
+Initial_NOBS_art/*
+
+# System
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+storage/backups/*
