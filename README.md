@@ -1,6 +1,6 @@
-# 🎬 UNIT3D BÚNKER - N.O.B.S Edition
+# 🎬 UNIT3D BÚNKER - Edición N.O.B.S
 
-> **A Private Torrent Tracker, Dockerized & Battle-Hardened**
+> **Un Tracker de Torrents Privado, Dockerizado y Curtido en Batalla**
 
 ```
 ███████████████████████████████████████████████████████████████
@@ -44,552 +44,552 @@ Todo lo que necesitas para que el tracker no explote está en nuestra Wiki ofici
 
 ---
 
-## 📚 What is UNIT3D?
+## 📚 ¿Qué es UNIT3D?
 
-**[UNIT3D](https://github.com/HDInnovations/UNIT3D)** is a modern, feature-rich Private Torrent Tracker software built on **Laravel 12**, **Livewire**, and **AlpineJS**. Created by the HDInnovations team, it powers high-performance private tracker communities with support for:
+**[UNIT3D](https://github.com/HDInnovations/UNIT3D)** es un software moderno y rico en funciones para Trackers de Torrents Privados, construido sobre **Laravel 12**, **Livewire** y **AlpineJS**. Creado por el equipo de HDInnovations, impulsa comunidades de trackers privados de alto rendimiento con soporte para:
 
-- 🔐 **Advanced User Management**: Roles, permissions, invitations, achievements
-- 🔍 **Meilisearch Integration**: Millisecond search across millions of torrents
-- 📊 **Comprehensive Analytics**: Torrent stats, user activity, seeding ratios
-- 🎨 **Theme System**: Customizable UI with Sass/CSS
-- 📧 **Email Notifications**: SMTP integration, activity alerts
-- 🔗 **IRC Integration**: Live announcements and bot integration
-- 🌍 **Internationalization**: Multi-language support
+- 🔐 **Gestión Avanzada de Usuarios**: Roles, permisos, invitaciones, logros
+- 🔍 **Integración con Meilisearch**: Búsqueda en milisegundos a través de millones de torrents
+- 📊 **Analíticas Completas**: Estadísticas de torrents, actividad de usuarios, ratios de seedeo
+- 🎨 **Sistema de Temas**: UI personalizable con Sass/CSS
+- 📧 **Notificaciones por Correo**: Integración SMTP, alertas de actividad
+- 🔗 **Integración IRC**: Anuncios en vivo e integración de bots
+- 🌍 **Internacionalización**: Soporte para múltiples idiomas
 
-### **Big Thanks to HDInnovations** ❤️
+### **Un Gran Agradecimiento a HDInnovations** ❤️
 
-This project would not exist without UNIT3D. The original developers created an incredible platform for private tracker communities. [**→ Visit UNIT3D GitHub**](https://github.com/HDInnovations/UNIT3D)
-
----
-
-## 🔧 Why N.O.B.S? What We Built
-
-UNIT3D is a **brilliant platform**, but it arrives as source code, not a packaged deployment. We took the Community Edition and did two things:
-
-### **Part 1: Fixed UNIT3D's Broken Pieces**
-
-The Community Edition had **unfixed bugs and missing features**:
-
-| Problem | Impact | Our Solution |
-|---------|--------|--------------|
-| **Installer Removed** | Official install script deleted by devs; left in broken state | Re-implemented setup logic in `entrypoint.sh` (auto-run migrations, blacklist, cache) |
-| **Unconfigured Meilisearch** | Search engine shipped but not indexed or synced | Implemented cold-boot indexing, real-time observer syncing, Master Key protection |
-| **Brute-Force Too Aggressive** | Settings locked out legitimate users (5 attempts = 24h block) | Tuned FortifyServiceProvider (5→15 attempts, 24h→1h, created backup owner) |
-| **Email Blacklist Fragility** | System breaks if external CDN unreachable | Created persistent local cache (`storage/app/email-blacklist.json`) with hybrid fallback |
+Este proyecto no existiría sin UNIT3D. Los desarrolladores originales crearon una plataforma increíble para comunidades de trackers privados. [**→ Visita el GitHub de UNIT3D**](https://github.com/HDInnovations/UNIT3D)
 
 ---
 
-### **Part 2: Dockerized It (No Trivial Task)**
+## 🔧 ¿Por qué N.O.B.S? Lo que Construimos
 
-The original UNIT3D is **not Docker-native**. We built the complete containerization:
+UNIT3D es una **plataforma brillante**, pero llega como código fuente, no como una implementación empaquetada. Tomamos la Edición Comunitaria e hicimos dos cosas:
 
-| Challenge | Solution |
-|-----------|----------|
-| **Missing Background Services** | Added `scheduler` and `worker` containers with dedicated entrypoints |
-| **IP Address Masking** | Configured Nginx reverse proxy headers + Laravel TrustProxies (real IPs in profiles) |
-| **Permission Chaos in Containers** | Auto-healing in `entrypoint.sh` (chmod 775, chown www-data on boot) |
-| **Storage Link in Docker** | Configured persistent volume mounts with correct symlinks |
-| **No Dependency Persistence** | Included `vendor/` and `node_modules/` in repo (Plug & Play offline recovery) |
+### **Parte 1: Arreglamos las Piezas Rotas de UNIT3D**
 
----
+La Edición Comunitaria tenía **bugs sin corregir y funciones faltantes**:
 
-### **Part 3: Added Resilience (The "Búnker" Philosophy)**
-
-Beyond fixing and dockerizing, we added **autonomous, offline-first features**:
-
-| Feature | Benefit |
-|---------|---------|
-| **Cold Backup Strategy** | Stop containers → copy → restart (zero corruption, data integrity guaranteed) |
-| **Health Check Automation** | Monitor 8008, Meilisearch, MySQL, Redis; alert on failure |
-| **Auto-Healing Entrypoints** | Power off/on → everything works (no manual intervention) |
-| **Makefile Control** | `make up`, `make backup`, `make health` (simple operations, zero learning curve) |
-
-**Result**: A production-ready, autonomous system designed for **communities running their own infrastructure**.
+| Problema | Impacto | Nuestra Solución |
+|---|---|---|
+| **Instalador Eliminado** | El script de instalación oficial fue eliminado por los desarrolladores; dejado en un estado roto | Reimplementamos la lógica de configuración en `entrypoint.sh` (ejecución automática de migraciones, listas negras, caché) |
+| **Meilisearch sin Configurar** | El motor de búsqueda se incluía pero no se indexaba ni sincronizaba | Implementamos indexación en arranque en frío, sincronización con observadores en tiempo real y protección con Llave Maestra |
+| **Fuerza Bruta Demasiado Agresiva** | La configuración bloqueaba a usuarios legítimos (5 intentos = bloqueo de 24h) | Ajustamos FortifyServiceProvider (5→15 intentos, 24h→1h, creamos propietario de respaldo) |
+| **Fragilidad de la Lista Negra de Correos** | El sistema se rompía si el CDN externo no era accesible | Creamos una caché local persistente (`storage/app/email-blacklist.json`) con un sistema de respaldo híbrido |
 
 ---
 
-## 🚀 Core Improvements
+### **Parte 2: Lo Dockerizamos (No es una Tarea Trivial)**
 
-### 1. **🔍 Meilisearch: Instant, Resilient Search**
+El UNIT3D original **no es nativo de Docker**. Construimos la contenedorización completa:
 
-**The Challenge**: UNIT3D includes Meilisearch as its search engine, but **provides no documentation or setup**. Installing it and configuring it are left to the operator.
+| Desafío | Solución |
+|---|---|
+| **Servicios en Segundo Plano Faltantes** | Añadimos contenedores `scheduler` y `worker` con entrypoints dedicados |
+| **Enmascaramiento de Direcciones IP** | Configuramos cabeceras de proxy inverso en Nginx + TrustProxies de Laravel (IPs reales en perfiles) |
+| **Caos de Permisos en Contenedores** | Autoreparación en `entrypoint.sh` (chmod 775, chown www-data en el arranque) |
+| **Enlace de Almacenamiento en Docker** | Configuramos montajes de volúmenes persistentes con los enlaces simbólicos correctos |
+| **Sin Persistencia de Dependencias** | Incluimos `vendor/` y `node_modules/` en el repositorio (recuperación Plug & Play sin conexión) |
 
-**Our Solution**:
+---
+
+### **Parte 3: Añadimos Resiliencia (La Filosofía "Búnker")**
+
+Más allá de arreglar y dockerizar, añadimos **características autónomas y orientadas al funcionamiento sin conexión**:
+
+| Característica | Beneficio |
+|---|---|
+| **Estrategia de Backup en Frío** | Detener contenedores → copiar → reiniciar (cero corrupción, integridad de datos garantizada) |
+| **Automatización de Health Check** | Monitoriza el puerto 8008, Meilisearch, MySQL, Redis; alerta en caso de fallo |
+| **Entrypoints de Autoreparación** | Apagar/encender → todo funciona (sin intervención manual) |
+| **Control con Makefile** | `make up`, `make backup`, `make health` (operaciones simples, curva de aprendizaje cero) |
+
+**Resultado**: Un sistema listo para producción, autónomo y diseñado para **comunidades que gestionan su propia infraestructura**.
+
+---
+
+## 🚀 Mejoras Clave
+
+### 1. **🔍 Meilisearch: Búsqueda Instantánea y Resiliente**
+
+**El Desafío**: UNIT3D incluye Meilisearch como su motor de búsqueda, pero **no proporciona documentación ni configuración**. La instalación y configuración quedan a cargo del operador.
+
+**Nuestra Solución**:
 
 ```
-🏗️ INFRASTRUCTURE:
-  • Dedicated container (getmeili/meilisearch:latest) in docker-compose.yml
-  • Persistent index storage (Docker volume meilisearch-data)
-  • Master Key protection (MEILISEARCH_KEY in .env, never logged)
-  
-🔄 INITIALIZATION:
-  • Cold-boot indexing: entrypoint.sh runs php artisan scout:import
-  • If indexes missing, system rebuilds them on boot (self-healing)
-  • Configuration: app/Http/Scout config maps Torrent → Meilisearch
-  
-⚡ REAL-TIME SYNC:
-  • Laravel Observers listen for new/updated torrents
-  • Instant indexing (milliseconds) as users upload
-  • TMDB/IGDB metadata enrichment (posters, genres, ratings)
-  
-🛡️ RESILIENCE:
-  • Indexes survive container restarts (persisted to volume)
-  • Query fallback to MySQL if Meilisearch unavailable
-  • Health check monitors /health endpoint
+🏗️ INFRAESTRUCTURA:
+  • Contenedor dedicado (getmeili/meilisearch:latest) en docker-compose.yml
+  • Almacenamiento persistente de índices (volumen de Docker meilisearch-data)
+  • Protección con Llave Maestra (MEILISEARCH_KEY en .env, nunca registrada en logs)
+
+🔄 INICIALIZACIÓN:
+  • Indexación en arranque en frío: entrypoint.sh ejecuta php artisan scout:import
+  • Si faltan los índices, el sistema los reconstruye al arrancar (autoreparación)
+  • Configuración: app/Http/Scout config mapea Torrent → Meilisearch
+
+⚡ SINCRONIZACIÓN EN TIEMPO REAL:
+  • Observadores de Laravel escuchan por torrents nuevos o actualizados
+  • Indexación instantánea (milisegundos) a medida que los usuarios suben
+  • Enriquecimiento de metadatos de TMDB/IGDB (pósters, géneros, valoraciones)
+
+🛡️ RESILIENCIA:
+  • Los índices sobreviven a los reinicios de los contenedores (persisten en el volumen)
+  • Consulta de respaldo a MySQL si Meilisearch no está disponible
+  • El Health Check monitoriza el endpoint /health
 ```
 
-**Why it matters**: Searching 50,000+ torrents takes **milliseconds** instead of seconds. Database stays lean. Users get instant, filtered results.
+**Por qué es importante**: Buscar en más de 50,000 torrents toma **milisegundos** en lugar de segundos. La base de datos se mantiene ligera. Los usuarios obtienen resultados instantáneos y filtrados.
 
 ---
 
-### 2. **📧 Resilient Email Blacklist**
+### 2. **📧 Lista Negra de Correos Resiliente**
 
-**The Problem**: UNIT3D fetches disposable email domains from an external CDN during registration validation. **If the CDN is down or unreachable, registrations fail entirely.**
+**El Problema**: UNIT3D obtiene dominios de correo desechables de un CDN externo durante la validación del registro. **Si el CDN está caído o inaccesible, los registros fallan por completo.**
 
-**Our Solution - Hybrid Blacklist Strategy**:
+**Nuestra Solución - Estrategia de Lista Negra Híbrida**:
 
 ```
-PRIMARY (Online):
-  ✅ Fetch fresh list from CDN (andreis/disposable-emails)
-  ✅ Update once on boot (php artisan auto:email-blacklist-update)
-  
-FALLBACK (Offline):
-  ✅ Store local copy: storage/app/email-blacklist.json
-  ✅ 7,160+ domains persisted locally
-  ✅ If CDN unreachable, use local cache (registration still works)
-  
-PERSISTENCE:
-  ✅ Cache survives container restarts
-  ✅ Cache survives docker compose down/up
-  ✅ Cache included in full backups
+PRIMARIO (Online):
+  ✅ Obtiene una lista actualizada del CDN (andreis/disposable-emails)
+  ✅ Actualiza una vez al arrancar (php artisan auto:email-blacklist-update)
+
+RESPALDO (Offline):
+  ✅ Almacena una copia local: storage/app/email-blacklist.json
+  ✅ Más de 7,160 dominios persistidos localmente
+  ✅ Si el CDN no es accesible, usa la caché local (el registro sigue funcionando)
+
+PERSISTENCIA:
+  ✅ La caché sobrevive a los reinicios de los contenedores
+  ✅ La caché sobrevive a `docker compose down/up`
+  ✅ La caché se incluye en los backups completos
 ```
 
-**Implementation Details**:
-- Created `app/Helpers/EmailBlacklistUpdater.php` (auto-update logic)
-- Entrypoint runs `php artisan auto:email-blacklist-update` on boot
-- Custom Artisan command watches CDN + writes to local JSON
-- Registration uses local cache as primary (faster, reliable)
+**Detalles de Implementación**:
+- Se creó `app/Helpers/EmailBlacklistUpdater.php` (lógica de actualización automática)
+- El entrypoint ejecuta `php artisan auto:email-blacklist-update` al arrancar
+- Un comando de Artisan personalizado vigila el CDN y escribe en el JSON local
+- El registro usa la caché local como principal (más rápido, fiable)
 
-**Result**: Registration works **even if CDN is down**. System is autonomous and offline-capable.
+**Resultado**: El registro funciona **incluso si el CDN está caído**. El sistema es autónomo y capaz de funcionar sin conexión.
 
 ---
 
-### 3. **🌐 IP Address Transparency (Docker Networks)**
+### 3. **🌐 Transparencia de Direcciones IP (Redes de Docker)**
 
-**The Problem**: In Docker, Nginx and the Laravel app run in separate containers. Without proper headers, all requests appear to come from Docker's internal gateway (`172.21.0.1`). **All users show the same IP in their profiles.**
+**El Problema**: En Docker, Nginx y la aplicación Laravel se ejecutan en contenedores separados. Sin las cabeceras adecuadas, todas las peticiones parecen provenir de la puerta de enlace interna de Docker (`172.21.0.1`). **Todos los usuarios muestran la misma IP en sus perfiles.**
 
-**Our Solution - Reverse Proxy Headers + TrustProxies**:
+**Nuestra Solución - Cabeceras de Proxy Inverso + TrustProxies**:
 
 ```
-NGINX LAYER (.docker/nginx/default.conf):
+CAPA DE NGINX (.docker/nginx/default.conf):
   • proxy_set_header X-Real-IP $remote_addr;
   • proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   • proxy_set_header X-Forwarded-Proto $scheme;
-  
-LARAVEL LAYER (app/Http/Middleware/TrustProxies.php):
-  • protected $proxies = '*';  [Trust Nginx as reverse proxy]
-  • Reads X-Real-IP header and uses it as user's source IP
-  
-RESULT:
-  ✅ Real user IPs captured in database
-  ✅ Each user sees their actual public IP in profiles
-  ✅ IP-based banning/stats work correctly
+
+CAPA DE LARAVEL (app/Http/Middleware/TrustProxies.php):
+  • protected $proxies = '*';  [Confiar en Nginx como proxy inverso]
+  • Lee la cabecera X-Real-IP y la usa como la IP de origen del usuario
+
+RESULTADO:
+  ✅ IPs reales de los usuarios capturadas en la base de datos
+  ✅ Cada usuario ve su IP pública real en su perfil
+  ✅ El baneo y las estadísticas basadas en IP funcionan correctamente
 ```
 
-**Verification**: Log in, visit your profile → you'll see your real public IP, not Docker's gateway.
+**Verificación**: Inicia sesión, visita tu perfil → verás tu IP pública real, no la puerta de enlace de Docker.
 
 ---
 
-### 4. **🔒 Brute-Force Protection: Balance Security & Usability**
+### 4. **🔒 Protección contra Fuerza Bruta: Equilibrio entre Seguridad y Usabilidad**
 
-**The Problem**: UNIT3D's default Fortify settings were **too aggressive**:
-- 5 failed logins → blocked for 24 hours
-- Single shared gateway IP (172.21.0.1 in Docker) → legitimate users all blocked together
-- Result: **Developers locked themselves out during testing/recovery**
+**El Problema**: La configuración por defecto de Fortify en UNIT3D era **demasiado agresiva**:
+- 5 inicios de sesión fallidos → bloqueado por 24 horas
+- IP de puerta de enlace compartida única (172.21.0.1 en Docker) → usuarios legítimos bloqueados juntos
+- Resultado: **Los desarrolladores se bloqueaban a sí mismos durante las pruebas/recuperación**
 
-**Our Adjustment** (`app/Providers/FortifyServiceProvider.php`):
+**Nuestro Ajuste** (`app/Providers/FortifyServiceProvider.php`):
 
 ```php
-// Before (too strict):
-RateLimiter::for('login', 5 attempts per minute);        // 5 failures = block
+// Antes (demasiado estricto):
+RateLimiter::for('login', 5 intentos por minuto);      // 5 fallos = bloqueo
 $throttleKey = hashless unique attempt;
 
-// After (balanced):
-RateLimiter::for('login', 15 attempts per minute);       // 15 failures = block
-RateLimiter::for('two-factor', 6 attempts per minute);   // 2FA more lenient
-Block duration: 24h → 1h                                  // Recovery faster
-Multi-account check: 1 → 3 threshold                      // Allow account switching
+// Después (equilibrado):
+RateLimiter::for('login', 15 intentos por minuto);     // 15 fallos = bloqueo
+RateLimiter::for('two-factor', 6 intentos por minuto); // 2FA más indulgente
+Duración del bloqueo: 24h → 1h                          // Recuperación más rápida
+Verificación de multi-cuenta: umbral de 1 → 3           // Permite cambiar de cuenta
 ```
 
-**Additional Safety**:
-- Created `BackupOwner` account with full permissions (emergency access)
-- Can use backup account if primary is locked
-- Logs track failed attempts to investigate actual attacks
+**Seguridad Adicional**:
+- Se creó la cuenta `BackupOwner` con permisos completos (acceso de emergencia)
+- Se puede usar la cuenta de respaldo si la principal está bloqueada
+- Los logs rastrean los intentos fallidos para investigar ataques reales
 
-**Result**: System protects against brute-force **while allowing legitimate recovery and testing**.
+**Resultado**: El sistema protege contra la fuerza bruta **mientras permite la recuperación y pruebas legítimas**.
 
 ---
 
-### 5. **🛡️ Autonomous Infrastructure (The "Búnker")**
+### 5. **🛡️ Infraestructura Autónoma (El "Búnker")**
 
-#### **Auto-Healing on Startup**
+#### **Autoreparación al Iniciar**
 
-Every container boot triggers automatic recovery:
+Cada arranque de contenedor desencadena una recuperación automática:
 
 ```bash
-# .docker/entrypoint.sh does:
-✅ Copy .env.example → .env (if .env missing)
-✅ composer install (if vendor/ missing)  
-✅ npm install + build (if public/build/ missing)
-✅ Create storage folders
-✅ Fix permissions (chmod 775, chown www-data)
-✅ Wait for MySQL
-✅ Generate APP_KEY (if missing)
-✅ Run migrations (--force)
-✅ Update email blacklist
-✅ Start PHP-FPM
+# .docker/entrypoint.sh hace lo siguiente:
+✅ Copia .env.example → .env (si .env no existe)
+✅ composer install (si vendor/ no existe)
+✅ npm install + build (si public/build/ no existe)
+✅ Crea carpetas de almacenamiento
+✅ Arregla permisos (chmod 775, chown www-data)
+✅ Espera a MySQL
+✅ Genera APP_KEY (si no existe)
+✅ Ejecuta migraciones (--force)
+✅ Actualiza la lista negra de correos
+✅ Inicia PHP-FPM
 ```
 
-**Result**: Power off the server, power on → everything works. No manual intervention.
+**Resultado**: Apaga el servidor, enciéndelo → todo funciona. Sin intervención manual.
 
 ---
 
-#### **Cold Backup (Surgical Snapshot)**
+#### **Backup en Frío (Snapshot Quirúrgico)**
 
-**Philosophy**: Backups must be **corruption-proof, complete, and offline-capable**. 
+**Filosofía**: Los backups deben ser **a prueba de corrupción, completos y capaces de funcionar sin conexión**.
 
 ```bash
-./backup.sh workflow:
+Flujo de trabajo de ./backup.sh:
 
-1. 💾 MySQL Dump (hot dump, --no-tablespaces for MySQL 8)
-   └─ Captures database state without locking issues
+1. 💾 Volcado de MySQL (volcado en caliente, --no-tablespaces para MySQL 8)
+   └─ Captura el estado de la base de datos sin problemas de bloqueo
 
-2. 🛑 Container Freeze (docker compose stop)
-   └─ Stops all containers for consistent file snapshot
-   
-3. 📦 Image Snapshot (docker save)
-   └─ Exports all Docker images (php:8.4, mysql:8.0, redis, meilisearch)
-   └─ Used for offline reconstruction if Docker Hub unavailable
-   
-4. 📂 Full Archive (tar -czf)
-   └─ Compresses: app code, vendor/, node_modules/, configs, data
-   └─ Includes everything needed for complete offline recovery
-   
-5. ♻️ Rotation (keep last 3 snapshots)
-   └─ Prevents disk fill-up, maintains recent backups
-   
-6. 🚀 Resurrection (docker compose up)
-   └─ Verifies backup was successful
-   └─ Restarts system immediately (minimize downtime)
+2. 🛑 Congelación de Contenedores (docker compose stop)
+   └─ Detiene todos los contenedores para un snapshot de archivos consistente
+
+3. 📦 Snapshot de Imágenes (docker save)
+   └─ Exporta todas las imágenes de Docker (php:8.4, mysql:8.0, redis, meilisearch)
+   └─ Se usa para la reconstrucción sin conexión si Docker Hub no está disponible
+
+4. 📂 Archivo Completo (tar -czf)
+   └─ Comprime: código de la aplicación, vendor/, node_modules/, configuraciones, datos
+   └─ Incluye todo lo necesario para una recuperación completa sin conexión
+
+5. ♻️ Rotación (mantiene los últimos 3 snapshots)
+   └─ Evita que el disco se llene, mantiene backups recientes
+
+6. 🚀 Resurrección (docker compose up)
+   └─ Verifica que el backup se haya realizado con éxito
+   └─ Reinicia el sistema inmediatamente (minimiza el tiempo de inactividad)
 ```
 
-**Why "surgical"?**:
-- ✅ **No corruption**: Stopping containers ensures file consistency during copy
-- ✅ **Plug & Play**: Full `vendor/` and `node_modules/` included
-- ✅ **Offline recovery**: Docker images + all dependencies = works anywhere
-- ✅ **Atomic**: Complete snapshot at single point in time
+**¿Por qué "quirúrgico"?**:
+- ✅ **Sin corrupción**: Detener los contenedores asegura la consistencia de los archivos durante la copia
+- ✅ **Plug & Play**: Se incluyen `vendor/` y `node_modules/` completos
+- ✅ **Recuperación sin conexión**: Imágenes de Docker + todas las dependencias = funciona en cualquier lugar
+- ✅ **Atómico**: Snapshot completo en un único punto en el tiempo
 
 ---
 
-#### **Health Checks**
+#### **Health Checks (Chequeos de Salud)**
 
 ```bash
-make health  # Runs ./health_check.sh
+make health  # Ejecuta ./health_check.sh
 
-Checks:
-✅ Port 8008 responds with HTTP 200
-✅ Meilisearch /health endpoint
-✅ MySQL connectivity
-✅ Redis connectivity
-✅ Queue worker alive
-✅ Scheduler running
+Chequeos:
+✅ El puerto 8008 responde con HTTP 200
+✅ Endpoint /health de Meilisearch
+✅ Conectividad con MySQL
+✅ Conectividad con Redis
+✅ El worker de la cola está vivo
+✅ El scheduler se está ejecutando
 
-If any fail: Alerts + can auto-restart
+Si alguno falla: Alertas + puede reiniciar automáticamente
 ```
 
 ---
 
-### 6. **🎨 N.O.B.S Branding (Custom Theme)**
+### 6. **🎨 Branding de N.O.B.S (Tema Personalizado)**
 
-UNIT3D ships with a default theme. We created a custom N.O.B.S identity:
+UNIT3D viene con un tema por defecto. Creamos una identidad personalizada de N.O.B.S:
 
-- **Custom SCSS Theme**: `resources/sass/themes/_refined-nobs.scss`
-  - Neon cyan/pink aesthetic
-  - Glass-morphism panels with blur effects
-  - Industrial-blocky typography
-  
-- **Asset Customization**:
-  - **Favicon**: Custom 64x64 NOBS medal icon
-  - **Logo**: NOBS branding on login/register pages
-  - **OG Image**: Social media sharing image
-  - **Auth Pages**: Custom backgrounds and styling
-  
-- **Easy Extensibility**:
-  - All styles in Sass (themeable variables)
-  - Compiled with Vite (`npm run build`)
-  - Switch themes via admin panel or `config/other.php`
+- **Tema SCSS Personalizado**: `resources/sass/themes/_refined-nobs.scss`
+  - Estética neón cian/rosa
+  - Paneles de glassmorphism con efectos de desenfoque
+  - Tipografía industrial y de bloques
 
-This is **not a core UNIT3D change** — it's a custom skin that respects the original platform.
+- **Personalización de Activos**:
+  - **Favicon**: Icono de medalla de NOBS personalizado de 64x64
+  - **Logo**: Marca de NOBS en las páginas de inicio de sesión/registro
+  - **Imagen OG**: Imagen para compartir en redes sociales
+  - **Páginas de Autenticación**: Fondos y estilos personalizados
 
----
+- **Extensibilidad Fácil**:
+  - Todos los estilos en Sass (variables temáticas)
+  - Compilado con Vite (`npm run build`)
+  - Cambia de tema a través del panel de administración o `config/other.php`
 
-### 7. **⚙️ Configuration Adjustments**
-
-**config/other.php** optimizations:
-- Invitation wait time: 24h → 1h (after 2FA activation)
-- Max unused invites per user: 1 → 10 (staff-friendly)
-- Site subtitle: Contextualized for N.O.B.S
-- Email fallback: Safe default if .env missing
-
-**Security hardening**:
-- `SESSION_SECURE_COOKIE=true` (HTTPS only)
-- `SESSION_DOMAIN=nobs.rawsmoke.net` (explicit domain)
-- `TRUSTED_PROXIES=*` (for reverse proxy chains)
+Esto **no es un cambio en el núcleo de UNIT3D** — es una piel personalizada que respeta la plataforma original.
 
 ---
 
-## 📦 Two Installation Paths
+### 7. **⚙️ Ajustes de Configuración**
 
-### **🚀 Path A: Fresh Install (New Tracker)**
+Optimizaciones en **config/other.php**:
+- Tiempo de espera para invitaciones: 24h → 1h (después de la activación de 2FA)
+- Máximo de invitaciones sin usar por usuario: 1 → 10 (amigable para el staff)
+- Subtítulo del sitio: Contextualizado para N.O.B.S
+- Correo de respaldo: Valor por defecto seguro si falta en .env
 
-For a brand-new tracker on a fresh machine:
+**Endurecimiento de la seguridad**:
+- `SESSION_SECURE_COOKIE=true` (solo HTTPS)
+- `SESSION_DOMAIN=nobs.rawsmoke.net` (dominio explícito)
+- `TRUSTED_PROXIES=*` (para cadenas de proxy inverso)
+
+---
+
+## 📦 Dos Rutas de Instalación
+
+### **🚀 Ruta A: Instalación Fresca (Nuevo Tracker)**
+
+Para un tracker completamente nuevo en una máquina limpia:
 
 ```bash
-# 1. Clone
+# 1. Clonar
 git clone https://github.com/RawSmokeTerribilus/UNIT3D_Docker.git
 cd UNIT3D_Docker
 
-# 2. Configure
+# 2. Configurar
 cp .env.example .env
-# Edit .env with your settings:
+# Edita .env con tu configuración:
 #   - APP_URL, ANNOUNCE_URL
-#   - DB credentials
-#   - MAIL_* settings
+#   - Credenciales de la BD
+#   - Ajustes de MAIL_*
 #   - MEILISEARCH_KEY
-#   - TMDB_API_KEY (optional)
+#   - TMDB_API_KEY (opcional)
 
-# 3. Install
+# 3. Instalar
 make install
 
-# 4. Seed initial data (optional)
+# 4. Sembrar datos iniciales (opcional)
 docker compose exec app php artisan db:seed
 docker compose exec app php artisan scout:import
 
-# 5. Access
+# 5. Acceder
 # Web: http://localhost:8008
-# Login: UNIT3D / UNIT3D (from seeder)
+# Login: UNIT3D / UNIT3D (del seeder)
 ```
 
-**What `make install` does**:
-- Creates storage/framework directories
-- Sets permissions (775 on storage/, bootstrap/cache/)
-- Builds Docker images
-- Starts all containers
-- Entrypoint auto-handles composer/npm/migrations
+**Qué hace `make install`**:
+- Crea directorios `storage/framework`
+- Establece permisos (775 en `storage/`, `bootstrap/cache/`)
+- Construye las imágenes de Docker
+- Inicia todos los contenedores
+- El entrypoint gestiona automáticamente `composer`/`npm`/migraciones
 
 ---
 
-### **📀 Path B: Restore from Backup (Disaster Recovery)**
+### **📀 Ruta B: Restaurar desde un Backup (Recuperación de Desastres)**
 
-If your tracker dies or you're moving to a new server:
+Si tu tracker se cae o te estás mudando a un nuevo servidor:
 
 ```bash
-# 1. Have your backup
+# 1. Ten tu backup
 ls -lh backups/snapshot_*/unit3d_full_snapshot_*.tar.gz
 
-# 2. On new host, extract
+# 2. En el nuevo host, extrae
 mkdir -p /home/rawserver/UNIT3D_Docker
 tar -xzf backup.tar.gz -C /home/rawserver/UNIT3D_Docker
 
-# 3. Start containers
+# 3. Inicia los contenedores
 cd /home/rawserver/UNIT3D_Docker
 make up
 
-# 4. Wait for MySQL to boot
+# 4. Espera a que MySQL arranque
 sleep 10
 
-# 5. Restore database
+# 5. Restaura la base de datos
 docker exec -i unit3d-db mysql -u unit3d -punit3d unit3d < db_unit3d.sql
 
-# 6. Restart app layer
+# 6. Reinicia la capa de la aplicación
 make restart
 
-# 7. Verify
+# 7. Verifica
 make health
 ```
 
-**Why this works**:
-- Backup includes everything: source code, vendor/, node_modules/, configs
-- Database dump is included
-- Docker images are included (can work offline)
-- No need to download anything; entirely self-contained
+**Por qué funciona esto**:
+- El backup incluye todo: código fuente, `vendor/`, `node_modules/`, configuraciones
+- El volcado de la base de datos está incluido
+- Las imágenes de Docker están incluidas (puede funcionar sin conexión)
+- No es necesario descargar nada; es completamente autocontenido
 
 ---
 
-## 🛠️ Management: The Makefile
+## 🛠️ Gestión: El Makefile
 
 ```bash
-make help        # Show all commands
-make up          # Start containers (daemon mode)
-make stop        # Stop containers
-make restart     # Restart app + web (after code changes)
-make status      # Show container status
-make backup      # Run surgical backup
-make health      # Run health checks
-make logs        # Tail app logs live
-make clean       # Clear Laravel caches (config, routes, views)
+make help        # Muestra todos los comandos
+make up          # Inicia los contenedores (modo daemon)
+make stop        # Detiene los contenedores
+make restart     # Reinicia la app + web (después de cambios en el código)
+make status      # Muestra el estado de los contenedores
+make backup      # Ejecuta el backup quirúrgico
+make health      # Ejecuta los chequeos de salud
+make logs        # Muestra los logs de la app en vivo
+make clean       # Limpia las cachés de Laravel (config, rutas, vistas)
 ```
 
 ---
 
-## 📊 Architecture
+## 📊 Arquitectura
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                   NGINX (Port 8008)              │
-│               (Reverse Proxy + Static)           │
+│                     NGINX (Puerto 8008)          │
+│                (Proxy Inverso + Estáticos)       │
 └────────────┬─────────────────────────────────────┘
              │
       ┌──────▼──────┐
-      │   PHP-FPM   │ (Laravel App)
-      │  (Port 9000)│
+      │   PHP-FPM   │ (App de Laravel)
+      │ (Puerto 9000)│
       └──────┬──────┘
              │
    ┌─────────┼─────────┬────────────┬──────────────┐
    │         │         │            │              │
-┌──▼──┐  ┌──▼──┐  ┌───▼────┐  ┌───▼────┐  ┌───▼──┐
-│MySQL│  │Redis│  │Meili   │  │Mailpit │  │Worker│
-│8.0  │  │     │  │search  │  │(Mailbox)  │Queue │
-└─────┘  └─────┘  └────────┘  └────────┘  └──────┘
+┌──▼──┐   ┌──▼──┐   ┌───▼────┐   ┌───▼────┐   ┌───▼──┐
+│MySQL│   │Redis│   │Meili   │   │Mailpit │   │Worker│
+│8.0  │   │     │   │search  │   │(Buzón) │   │Cola  │
+└─────┘   └─────┘   └────────┘   └────────┘   └──────┘
 
-Scheduler: Runs php artisan schedule:work (background cron)
-Worker: Runs php artisan queue:work (background jobs)
+Scheduler: Ejecuta php artisan schedule:work (cron en segundo plano)
+Worker: Ejecuta php artisan queue:work (trabajos en segundo plano)
 ```
 
 ---
 
-## ⚙️ Port Mapping
+## ⚙️ Mapeo de Puertos
 
-| Service | Internal | External | Purpose |
-|---------|----------|----------|---------|
-| Nginx | 80 | 8008 | Web UI |
-| PHP-FPM | 9000 | — | App runtime |
-| MySQL | 3306 | 3307 | Database |
-| Redis | 6379 | 6380 | Cache/Sessions/Queue |
-| Meilisearch | 7700 | 7701 | Search Engine |
-| Mailpit | 1025/8025 | 8026 | Email Testing |
-
----
-
-## 🔐 Security Notes
-
-### Environment Variables (.env)
-
-**Keep these safe:**
-- `APP_KEY` — Laravel encryption key (generated on install)
-- `MAIL_PASSWORD` — SMTP credentials
-- `MEILISEARCH_KEY` — Search engine Master Key
-- `TMDB_API_KEY` — Third-party API access
-
-**Never commit `.env`** to version control. Use `.env.example` as a template.
-
-### Hardened Settings
-
-- Sessions are HTTPS-only (`SESSION_SECURE_COOKIE=true`)
-- Session domain is explicit (`SESSION_DOMAIN=your-domain`)
-- Brute-force protection tuned to prevent lockouts
-- IP addresses correctly forwarded (no Docker gateway exposure)
+| Servicio | Interno | Externo | Propósito |
+|---|---|---|---|
+| Nginx | 80 | 8008 | UI Web |
+| PHP-FPM | 9000 | — | Entorno de ejecución de la app |
+| MySQL | 3306 | 3307 | Base de datos |
+| Redis | 6379 | 6380 | Caché/Sesiones/Cola |
+| Meilisearch | 7700 | 7701 | Motor de Búsqueda |
+| Mailpit | 1025/8025 | 8026 | Pruebas de Correo |
 
 ---
 
-## 📖 Troubleshooting
+## 🔐 Notas de Seguridad
 
-### **Error 500 / Permission Denied**
+### Variables de Entorno (.env)
+
+**Mantén esto a salvo:**
+- `APP_KEY` — Clave de encriptación de Laravel (generada en la instalación)
+- `MAIL_PASSWORD` — Credenciales SMTP
+- `MEILISEARCH_KEY` — Llave Maestra del motor de búsqueda
+- `TMDB_API_KEY` — Acceso a API de terceros
+
+**Nunca comitees `.env`** al control de versiones. Usa `.env.example` como plantilla.
+
+### Configuraciones Endurecidas
+
+- Las sesiones son solo HTTPS (`SESSION_SECURE_COOKIE=true`)
+- El dominio de la sesión es explícito (`SESSION_DOMAIN=tu-dominio`)
+- La protección contra fuerza bruta está ajustada para evitar bloqueos
+- Las direcciones IP se reenvían correctamente (sin exposición de la puerta de enlace de Docker)
+
+---
+
+## 📖 Solución de Problemas
+
+### **Error 500 / Permiso Denegado**
 
 ```bash
-# Auto-fixed on restart, but to force:
+# Se arregla automáticamente al reiniciar, pero para forzar:
 docker compose restart app
 docker exec unit3d-app chmod -R 775 storage bootstrap/cache
 docker exec unit3d-app chown -R www-data:www-data storage bootstrap/cache
 ```
 
-### **Search not working / No results**
+### **La búsqueda no funciona / Sin resultados**
 
 ```bash
-# Re-index Meilisearch
+# Reindexar Meilisearch
 docker compose exec app php artisan scout:import
 
-# Verify health
+# Verificar salud
 make health
 ```
 
-### **Email not sending**
+### **El correo no se envía**
 
 ```bash
-# Check Mailpit dashboard (if using local testing)
-# Open: http://localhost:8026
+# Revisa el panel de Mailpit (si usas pruebas locales)
+# Abre: http://localhost:8026
 
-# If using SMTP:
+# Si usas SMTP:
 docker compose logs app | grep -i mail
 
-# Test via Tinker
+# Probar vía Tinker
 docker compose exec app php artisan tinker
 # >>> Mail::raw('Test', fn($m) => $m->to('test@example.com')->send());
 ```
 
-### **Database locked / MySQL issues**
+### **Base de datos bloqueada / Problemas con MySQL**
 
 ```bash
-# Check MySQL logs
+# Revisa los logs de MySQL
 docker compose logs db
 
-# If corrupted, restore from backup
-# See "Path B: Restore from Backup" above
+# Si está corrupta, restaura desde el backup
+# Ver "Ruta B: Restaurar desde un Backup" arriba
 ```
 
 ---
 
-## 🎯 Philosophy: "From the Scene, For the Scene"
+## 🎯 Filosofía: "De la Scene, Para la Scene"
 
-This project reflects 100+ hours of work to resurrect UNIT3D from its broken community edition state. Every fix, every automation, every redundancy exists because **we believe in the platform**.
+Este proyecto refleja más de 100 horas de trabajo para resucitar UNIT3D de su estado roto en la edición comunitaria. Cada arreglo, cada automatización, cada redundancia existe porque **creemos en la plataforma**.
 
-- **Offline-first**: Works completely standalone (no cloud dependencies)
-- **Resilient**: Auto-heals from common failures (permissions, missing folders, network timeouts)
-- **Transparent**: Changes are documented and justified (see this README)
-- **Maintainable**: Simple Makefile + scripts anyone can understand
-- **Peer-to-peer**: Designed for communities running their own infrastructure
+- **Primero sin conexión**: Funciona de forma completamente autónoma (sin dependencias en la nube)
+- **Resiliente**: Se autorepara de fallos comunes (permisos, carpetas faltantes, tiempos de espera de red)
+- **Transparente**: Los cambios están documentados y justificados (ver este README)
+- **Mantenible**: Makefile simple + scripts que cualquiera puede entender
+- **Peer-to-peer**: Diseñado para comunidades que gestionan su propia infraestructura
 
-This is tracker software **for people who run trackers**, not a SaaS product with vendor lock-in.
-
----
-
-## 📝 Contributing
-
-Found a bug? Have an improvement? Issues and PRs welcome!
-
-This is a community fork. We're improving UNIT3D for the benefit of private tracker operators everywhere.
+Este es un software de tracker **para gente que gestiona trackers**, no un producto SaaS con dependencia de un proveedor.
 
 ---
 
-## 📜 License
+## 📝 Contribuciones
 
-UNIT3D is licensed under the GNU Affero General Public License v3.0. See [LICENSE.txt](./LICENSE.txt).
+¿Encontraste un bug? ¿Tienes una mejora? ¡Los Issues y PRs son bienvenidos!
 
-This fork maintains the same license and spirit: open, transparent, and community-driven.
-
----
-
-## ❤️ Acknowledgments
-
-- **HDInnovations** for creating UNIT3D
-- **The private tracker scene** for decades of innovation and community building
-- **The N.O.B.S crew** for the 100 hours it took to make this work
+Este es un fork comunitario. Estamos mejorando UNIT3D en beneficio de los operadores de trackers privados de todo el mundo.
 
 ---
 
-**Last Updated**: March 2026 | **Status**: 🟢 Production Ready
+## 📜 Licencia
+
+UNIT3D está licenciado bajo la GNU Affero General Public License v3.0. Ver [LICENSE.txt](./LICENSE.txt).
+
+Este fork mantiene la misma licencia y espíritu: abierto, transparente e impulsado por la comunidad.
+
+---
+
+## ❤️ Agradecimientos
+
+- **HDInnovations** por crear UNIT3D
+- **La escena de trackers privados** por décadas de innovación y construcción de comunidades
+- **El equipo de N.O.B.S** por las 100 horas que tomó hacer que esto funcionara
+
+---
+
+**Última Actualización**: Marzo 2026 | **Estado**: 🟢 Listo para Producción
 
 ```
-Made with resilience and care.
-From the scene. For the scene.
+Hecho con resiliencia y cuidado.
+De la scene. Para la scene.
 ```
