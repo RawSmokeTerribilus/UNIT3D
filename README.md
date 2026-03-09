@@ -13,6 +13,35 @@
 ███████████████████████████████████████████████████████████████
 ```
 
+
+> **⚠️ AVISO PARA NAVEGANTES:** Si vas a tocar el stack, deja el café un segundo y lee. Entrar aquí sin pasar por la wiki es como intentar desarmar una bomba con palillos chinos. Bajo tu propio riesgo.
+
+---
+
+<p align="center">
+  <a href="https://rawsmoketerribilus.github.io/UNIT3D/">
+    <img src="https://img.shields.io/badge/📖_WIKI_Y_MANUAL-ESTADO:_ONLINE-brightgreen?style=for-the-badge&logo=gitbook&logoColor=white" alt="Manual Online">
+  </a>
+  <a href="https://github.com/rawsmoketerribilus/UNIT3D/actions">
+    <img src="https://img.shields.io/badge/BOT_DEPLOY-ESTADO:_OPERATIVO-blue?style=for-the-badge&logo=github-actions&logoColor=white" alt="Bot Status">
+  </a>
+</p>
+
+---
+
+### 📚 La Biblia de Operaciones
+Todo lo que necesitas para que el tracker no explote está en nuestra Wiki oficial:
+
+👉 **[ACCEDER AL MANUAL COMPLETO](https://rawsmoketerribilus.github.io/UNIT3D/)**
+
+**¿Qué encontrarás ahí dentro?**
+* 🛠️ **Configuración del Entorno:** Cómo domar los contenedores sin morir en el intento.
+* 💾 **Backups Blindados:** El sistema de snapshots que nos salva el culo a las 06:00 AM.
+* 📑 **Guía de Desarrollo:** Para que el código nuevo no parezca escrito por el becario.
+* 🏗️ **Testing:** Cómo montar un laboratorio de pruebas que no pese 22GB.
+
+---
+
 ---
 
 ## 📚 What is UNIT3D?
