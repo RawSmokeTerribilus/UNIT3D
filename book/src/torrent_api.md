@@ -8,8 +8,7 @@ UNIT3D is offering a new `{JSON:API}`. If you haven't already head over to your 
 
 ### Torrent auto uploaders
 
-- [L4G's Upload Assistant](https://github.com/Audionut/Upload-Assistant) — a simple tool to take the work out of uploading
-- [GG Bot Upload Assistant](https://gitlab.com/NoobMaster669/gg-bot-upload-assistant) — a torrent auto uploader to take the manual work out of uploading
+- [RawSmoke's Singularity Suite](https://github.com/RawSmokeTerribilus/Singularity) — an amazing tool that does everything you need to check/edit/upload/update and edit Torrents, files and Tracker's description o images.
 
 ## API authentication
 
