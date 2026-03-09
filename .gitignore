@@ -27,6 +27,7 @@ ASSETS_REQUIRED.txt
 .zencoder/*
 .zenflow/*
 Initial_NOBS_art/*
+db_nobs_backup.sql
 
 # System
 .DS_Store

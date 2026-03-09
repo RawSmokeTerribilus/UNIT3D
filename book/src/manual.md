@@ -9,9 +9,9 @@ Este documento ha sido generado tras un análisis exhaustivo del código fuente 
 ### Análisis de la Lógica de Comprobación de Duplicados
 En UNIT3D, la comprobación de duplicados ocurre en dos frentes: la interfaz web y la API. 
 
-1. **Interfaz Web (Livewire):** Se utiliza el componente `app/Http/Livewire/SimilarTorrent.php` que realiza búsquedas dinámicas basadas en IDs de metadatos (TMDB, IGDB).
-2. **Sistema de Validación (FormRequests):** El archivo principal que maneja la validación de subidas es `app/Http/Requests/StoreTorrentRequest.php`.
-3. **API (Controller):** El controlador `app/Http/Controllers/API/TorrentController.php` maneja las subidas vía API (`/api/torrents/upload`).
+1. **Interfaz Web (Livewire):** Se utiliza el componente `app/Http/Livewire/SimilarTorrent.php` ([archivo válido de ejemplo](./assets/manual/punto-1/SimilarTorrent.php.txt)) que realiza búsquedas dinámicas basadas en IDs de metadatos (TMDB, IGDB).
+2. **Sistema de Validación (FormRequests):** El archivo principal que maneja la validación de subidas es `app/Http/Requests/StoreTorrentRequest.php` ([archivo ya configurado](./assets/manual/punto-1/StoreTorrentRequest.php.txt)).
+3. **API (Controller):** El controlador `app/Http/Controllers/API/TorrentController.php` ([archivo válido de ejemplo](./assets/manual/punto-1/TorrentController.php.txt)) maneja las subidas vía API (`/api/torrents/upload`).
 
 ### Rastreo del Error 500
 El Error 500 (Internal Server Error) suele ocurrir cuando una excepción no es capturada por el framework o cuando hay un fallo crítico en una dependencia. Tras analizar el código, hemos identificado los siguientes puntos críticos:
@@ -28,7 +28,7 @@ En el método `store` de `API/TorrentController.php`, la validación se realiza 
 Si la base de datos en Instancia B tiene problemas de integridad, o si el controlador de base de datos lanza una excepción inesperada durante esta comprobación (por ejemplo, fallos en el motor de búsqueda Meilisearch), el servidor devolverá un HTML de Error 500 en lugar de un JSON de error de validación.
 
 #### B. Fallo en el Helper de Bencode
-El proceso de "Dupe Check" requiere decodificar el archivo `.torrent` para extraer el `info_hash`. Esto se hace mediante `app/Helpers/Bencode.php`. 
+El proceso de "Dupe Check" requiere decodificar el archivo `.torrent` para extraer el `info_hash`. Esto se hace mediante `app/Helpers/Bencode.php` ([archivo ya configurado](./assets/manual/punto-1/Bencode.php.txt)). 
 Si la extensión de PHP `theodorejb/polycast` no está correctamente instalada o si hay una incompatibilidad con PHP 8.4 en el entorno de la VM, cualquier llamada a `Bencode::get_infohash()` fallará catastróficamente.
 
 #### C. Meilisearch como Driver de Búsqueda
@@ -54,7 +54,7 @@ Esto sucede porque el controlador de la API intenta instanciar el DTO de filtros
 617: );
 ```
 
-**2. Definición del Constructor del DTO (`app/DTO/TorrentSearchFiltersDTO.php`):**
+**2. Definición del Constructor del DTO (`app/DTO/TorrentSearchFiltersDTO.php`)** ([archivo válido de ejemplo](./assets/manual/punto-1/TorrentSearchFiltersDTO.php.txt)):
 ```php
 31: public function __construct(
 32:     private string $name = '',
@@ -85,7 +85,7 @@ Si un cliente devuelve un error "Not Found" (404), significa que la petición ni
 ### Diagnóstico del Error "Not Found"
 Basándonos en el código de UNIT3D, estas son las causas más probables:
 
-#### A. Error en la Ruta de Announce (`routes/announce.php`)
+#### A. Error en la Ruta de Announce (`routes/announce.php`) ([archivo válido de ejemplo](./assets/manual/punto-2/announce.php.txt))
 La ruta está definida de forma muy estricta. Si el cliente no envía la passkey exactamente como el tracker la espera (32 caracteres hexadecimales), o si hay un prefijo mal configurado en el servidor web (Nginx), Laravel devolverá un 404.
 ```php
 // routes/announce.php:33
@@ -93,7 +93,7 @@ Route::get('{passkey}', [App\Http\Controllers\AnnounceController::class, 'index'
 ```
 
 #### B. Fallo en la Validación del Usuario o Passkey
-Dentro de `AnnounceController`, cualquier fallo en la identificación del usuario o del torrent lanza una `TrackerException`. Si el sistema está mal configurado, el cliente torrent puede interpretar ciertas respuestas de error de red como un "Not Found" genérico.
+Dentro de `AnnounceController` ([archivo válido de ejemplo](./assets/manual/punto-2/AnnounceController.php.txt)), cualquier fallo en la identificación del usuario o del torrent lanza una `TrackerException` ([archivo válido de ejemplo](./assets/manual/punto-2/TrackerException.php.txt)). Si el sistema está mal configurado, el cliente torrent puede interpretar ciertas respuestas de error de red como un "Not Found" genérico.
 - **Passkey Inexistente:** Si la passkey no está en la base de datos (Error 140).
 - **Torrent No Registrado:** Si el infohash que envía el cliente no existe en la tabla `torrents` (Error 150).
 
@@ -148,7 +148,7 @@ Para que la IP llegue intacta al código PHP, la cadena debe estar configurada a
 ### Código Implicado y Configuración
 En la instancia de referencia, el middleware `TrustProxies.php` está configurado para confiar en **todos** los proxies (`*`), lo cual es común en entornos con balanceadores de carga dinámicos.
 
-**Configuración en `app/Http/Middleware/TrustProxies.php`:**
+**Configuración en `app/Http/Middleware/TrustProxies.php`** ([archivo ya configurado](./assets/manual/punto-3/TrustProxies.php.txt)):
 ```php
 22: class TrustProxies extends Middleware
 23: {
@@ -168,7 +168,7 @@ En la instancia de referencia, el middleware `TrustProxies.php` está configurad
 37: }
 ```
 
-**Configuración de Nginx (`.docker/nginx/default.conf`):**
+**Configuración de Nginx (`.docker/nginx/default.conf`)** ([archivo ya configurado](./assets/manual/punto-3/default.conf.txt)):
 Es vital que el servidor web pase las variables correctamente al proceso PHP:
 ```nginx
 22:     location ~ \.php$ {
@@ -193,7 +193,7 @@ Redis no es opcional en UNIT3D; se usa para:
 2.  **Peers Temporales:** Almacenar los anuncios de los clientes antes de volcarlos a SQL.
 3.  **Cache de Configuración:** Evitar miles de consultas a la DB para leer los ajustes del sitio.
 
-**Configuración Crítica en `config/database.php`:**
+**Configuración Crítica en `config/database.php`** ([archivo válido de ejemplo](./assets/manual/punto-4/database.php.txt)):
 UNIT3D utiliza múltiples bases de datos Redis (0-5) para evitar colisiones:
 ```php
 'redis' => [
@@ -213,9 +213,9 @@ UNIT3D delega tareas pesadas a procesos en segundo plano.
 - **Supervisor:** Se debe usar un gestor de procesos como Supervisor o systemd para asegurar que `php artisan queue:work` esté siempre corriendo.
 
 ### C. Tareas Programadas (Cron/Scheduler)
-El archivo `app/Console/Kernel.php` define qué ocurre y cada cuánto tiempo.
+El archivo `app/Console/Kernel.php` ([archivo válido de ejemplo](./assets/manual/punto-4/Kernel.php.txt)) define qué ocurre y cada cuánto tiempo.
 - **`AutoUpsertPeers` (cada 5 seg):** Vuelca los pares de Redis a MySQL. Sin esto, la web muestra 0 peers.
-- **`AutoUpdateUserLastActions` (cada 5 seg):** Actualiza la última vez que se vio a un usuario.
+- **`AutoUpdateUserLastActions`** ([archivo ya configurado](./assets/manual/punto-4/AutoUpdateUserLastActions.php.txt)) **(cada 5 seg):** Actualiza la última vez que se vio a un usuario.
 - **`AutoNerdStat` (cada hora):** Calcula estadísticas avanzadas.
 - **`BackupCommand` (diario):** Realiza copias de seguridad automáticas.
 
@@ -259,7 +259,7 @@ Si no se configura correctamente, cada salto "enmascara" la IP original. El Ngin
 Para solucionar esto, en esta instancia se han aplicado cambios en dos niveles:
 
 ### A. Nginx Interno (Paso de Cabeceras a PHP)
-En el archivo [./Config_Manual/punto-5/nginx_default.conf](./Config_Manual/punto-5/nginx_default.conf) (ubicado originalmente en `.docker/nginx/default.conf`), se ha modificado el bloque que gestiona PHP para forzar la lectura de la IP real:
+En el archivo `nginx_default.conf` ([archivo ya configurado](./assets/manual/punto-5/nginx_default.conf.txt)) (ubicado originalmente en `.docker/nginx/default.conf`), se ha modificado el bloque que gestiona PHP para forzar la lectura de la IP real:
 
 ```nginx
 22:     location ~ \.php$ {
@@ -275,7 +275,7 @@ En el archivo [./Config_Manual/punto-5/nginx_default.conf](./Config_Manual/punto
 *   **Línea 25 (`fastcgi_param REMOTE_ADDR $http_x_real_ip;`)**: Esta es la clave. Sobreescribe la variable `REMOTE_ADDR` de PHP con el contenido de la cabecera HTTP `X-Real-IP` (que Nginx recibe como `$http_x_real_ip`). De esta forma, cualquier función de Laravel que pida la IP del cliente recibirá la IP real.
 
 ### B. Laravel (Confianza en el Proxy)
-En el archivo [./Config_Manual/punto-5/TrustProxies.php](./Config_Manual/punto-5/TrustProxies.php) (ubicado en `app/Http/Middleware/TrustProxies.php`), se define en qué proxies se confía para leer estas cabeceras:
+En el archivo `TrustProxies.php` ([archivo ya configurado](./assets/manual/punto-5/TrustProxies.php.txt)) (ubicado en `app/Http/Middleware/TrustProxies.php`), se define en qué proxies se confía para leer estas cabeceras:
 
 ```php
 29:     protected $proxies = '*';
@@ -311,11 +311,11 @@ El sistema de metadatos en UNIT3D no es una consulta simple a una base de datos;
 
 ### A. Iniciación (Controllers)
 Cuando se sube un torrent (`TorrentController@store`) o se solicita una actualización manual (`SimilarTorrentController@update`), el sistema llama al servicio `TMDBScraper`.
-*   **Archivos Implicados:** [./Config_Manual/punto-6/TMDBScraper.php](./Config_Manual/punto-6/TMDBScraper.php)
+*   **Archivos Implicados:** `TMDBScraper.php` ([archivo ya configurado](./assets/manual/punto-6/TMDBScraper.php.txt))
 
 ### B. Segundo Plano (Queues y Jobs)
-El `TMDBScraper` no descarga los datos directamente para no bloquear la web. En su lugar, pone un "trabajo" en la cola: `ProcessMovieJob` o `ProcessTvJob`.
-*   **Archivos Implicados:** [./Config_Manual/punto-6/ProcessMovieJob.php](./Config_Manual/punto-6/ProcessMovieJob.php)
+El `TMDBScraper` no descarga los datos directamente para no bloquear la web. En su lugar, pone un "trabajo" en la cola: `ProcessMovieJob` o `ProcessTvJob` ([archivo ya configurado](./assets/manual/punto-6/ProcessTvJob.php.txt)).
+*   **Archivos Implicados:** `ProcessMovieJob.php` ([archivo ya configurado](./assets/manual/punto-6/ProcessMovieJob.php.txt))
 *   **Punto de Fallo Crítico (Redis):** Estos jobs utilizan un limitador de velocidad (Rate Limiter) para no ser baneados por TMDB.
     ```php
     // ProcessMovieJob.php:62
@@ -325,7 +325,7 @@ El `TMDBScraper` no descarga los datos directamente para no bloquear la web. En 
 
 ### C. El Cliente de API (External Fetch)
 Si el worker logra ejecutar el job, este utiliza un cliente HTTP para consultar la API de TheMovieDB.
-*   **Archivos Implicados:** [./Config_Manual/punto-6/MovieClient.php](./Config_Manual/punto-6/MovieClient.php)
+*   **Archivos Implicados:** `MovieClient.php` ([archivo válido de ejemplo](./assets/manual/punto-6/MovieClient.php.txt))
 *   **Configuración Vital:** Requiere una clave válida en el `.env`.
     ```env
     TMDB_API_KEY=tu_clave_aqui
@@ -333,7 +333,7 @@ Si el worker logra ejecutar el job, este utiliza un cliente HTTP para consultar 
 
 ### D. Almacenamiento y Visualización
 Una vez descargados, los datos se guardan en las tablas `tmdb_movies` o `tmdb_tv`. Las portadas y backdrops **no se descargan al servidor local**; UNIT3D almacena la ruta relativa y genera una URL directa al CDN de TMDB (`image.tmdb.org`).
-*   **Lógica de Visualización:** [./Config_Manual/punto-6/TorrentMeta.php](./Config_Manual/punto-6/TorrentMeta.php) (Trait usado por los modelos para inyectar los metadatos en las vistas).
+*   **Lógica de Visualización:** `TorrentMeta.php` ([archivo ya configurado](./assets/manual/punto-6/TorrentMeta.php.txt)) (Trait usado por los modelos para inyectar los metadatos en las vistas).
 
 ---
 

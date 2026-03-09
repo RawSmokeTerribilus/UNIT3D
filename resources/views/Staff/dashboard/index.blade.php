@@ -20,6 +20,26 @@
     <div class="dashboard__menus">
         <section class="panelV2 panel--grid-item">
             <h2 class="panel__heading">
+                <i class="{{ config("other.font-awesome") }} fa-cog"></i>
+                Configuración Avanzada
+            </h2>
+            <div class="panel__body">
+                <p class="form__group form__group--horizontal">
+                    <a class="form__button form__button--text" href="{{ route("staff.config.index") }}">
+                        <i class="{{ config("other.font-awesome") }} fa-sliders-h"></i>
+                        Gestor de Configuración
+                    </a>
+                </p>
+                <p class="form__group form__group--horizontal">
+                    <a class="form__button form__button--primary" href="{{ config("app.url") }}/dashboard/manual/index.html" target="_blank" style="background-color: #ff5722; color: white;">
+                        <i class="{{ config("other.font-awesome") }} fa-book"></i>
+                        SUPER BOTÓN MANUAL
+                    </a>
+                </p>
+            </div>
+        </section>
+        <section class="panelV2 panel--grid-item">
+            <h2 class="panel__heading">
                 <i class="{{ config('other.font-awesome') }} fa-link"></i>
                 {{ __('staff.links') }}
             </h2>

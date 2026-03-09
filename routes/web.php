@@ -95,6 +95,11 @@ Route::middleware('language')->group(function (): void {
             Route::get('/{article}', [App\Http\Controllers\ArticleController::class, 'show'])->name('show');
         });
 
+            // Config System
+            Route::prefix("config")->name("config.")->group(function (): void {
+                Route::get("/", [\App\Http\Controllers\Staff\ConfigController::class, "index"])->name("index");
+            });
+
         // Authenticated Images
         Route::prefix('authenticated-images')->name('authenticated_images.')->middleware('throttle:'.GlobalRateLimit::AUTHENTICATED_IMAGES->value)->withoutMiddleware('throttle:'.GlobalRateLimit::WEB->value)->group(function (): void {
             Route::get('/article-images/{article}', [App\Http\Controllers\AuthenticatedImageController::class, 'articleImage'])->name('article_image');
@@ -661,6 +666,11 @@ Route::middleware('language')->group(function (): void {
                 Route::delete('/{article}', [App\Http\Controllers\Staff\ArticleController::class, 'destroy'])->name('destroy');
             });
 
+            // Config System
+            Route::prefix("config")->name("config.")->group(function (): void {
+                Route::get("/", [\App\Http\Controllers\Staff\ConfigController::class, "index"])->name("index");
+            });
+
             // Applications System
             Route::prefix('applications')->name('applications.')->group(function (): void {
                 Route::get('/', [App\Http\Controllers\Staff\ApplicationController::class, 'index'])->name('index');
@@ -1148,6 +1158,42 @@ Route::middleware('language')->group(function (): void {
                 Route::get('/{wiki}/edit', [App\Http\Controllers\Staff\WikiController::class, 'edit'])->name('edit');
                 Route::patch('/{wiki}/update', [App\Http\Controllers\Staff\WikiController::class, 'update'])->name('update');
                 Route::delete('/{wiki}/destroy', [App\Http\Controllers\Staff\WikiController::class, 'destroy'])->name('destroy');
+            });
+            
+            // --- WIKI PRIVADA (SOLO USUARIOS LOGUEADOS) ---
+            Route::middleware(['web', 'auth'])->group(function () {
+                
+                // Redirección para arreglar la URL automáticamente
+                Route::get('/manual', function () {
+                    // Ponemos index.html explícitamente para evitar fallos de rutas relativas
+                    return redirect(url()->current() . '/index.html'); 
+                });
+
+                Route::get('/manual/{path?}', function ($path = 'index.html') {
+                    $absolutePath = storage_path('app/manual/' . $path);
+                    
+                    if (!file_exists($absolutePath) || is_dir($absolutePath)) {
+                        abort(404);
+                    }
+
+                    // Forzamos los MIME types para que el navegador no rechace el diseño
+                    $extension = pathinfo($absolutePath, PATHINFO_EXTENSION);
+                    $mimeType = match($extension) {
+                        'css'   => 'text/css',
+                        'js'    => 'application/javascript',
+                        'svg'   => 'image/svg+xml',
+                        'png'   => 'image/png',
+                        'woff'  => 'font/woff',
+                        'woff2' => 'font/woff2',
+                        'html', 'htm' => 'text/html',
+                        default => 'text/plain',
+                    };
+
+                    return response()->file($absolutePath, [
+                        'Content-Type' => $mimeType,
+                        'X-Content-Type-Options' => 'nosniff'
+                    ]);
+                })->where('path', '.*');
             });
 
             // Donation System

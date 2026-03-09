@@ -1,6 +1,6 @@
 [book]
-authors = ["EkoNesLeg", "HDVinnie", "Roardom"]
+authors = ["EkoNesLeg", "HDVinnie", "Roardom", "RawSmoke"]
 language = "en"
-multilingual = false
+#multilingual = false
 src = "src"
 title = "UNIT3D Documentation"

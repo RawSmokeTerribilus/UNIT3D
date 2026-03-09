@@ -1,10 +1,12 @@
 # Summary
 
+- [Spanish- Preámbulo](preambulo.md)
 - [Introduction](README.md)
 - [Backups](backups.md)
 - [Basic Tuning](basic_tuning.md)
 - [Local Development Arch Linux](local_development_arch_linux.md)
 - [Local Development MacOS](local_development_macos.md)
+- [SPANISH-Manual de Configuración](manual.md)
 - [Meilisearch Setup](meilisearch_setup.md)
 - [Server Management](server_management.md)
 - [Sharing Source Code](sharing_source_code.md)

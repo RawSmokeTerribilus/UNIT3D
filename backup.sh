@@ -1,13 +1,27 @@
 #!/bin/bash
+# --- SEGURO DE VIDA ---
+set -e # Si cualquier comando falla, el script se detiene y NO miente.
+
+# --- CONTROL DE PRIVILEGIOS ---
+if [ "$EUID" -ne 0 ]; then
+  echo "❌ ERROR FATAL: Este script requiere acceso absoluto a los volúmenes de Docker."
+  echo "👉 Por favor, ejecútalo así: sudo ./backup.sh"
+  exit 1
+fi
+
 # --- CONFIGURACIÓN ---
 NOW=$(date +"%Y-%m-%d_%H%M")
-BASE_BACKUP_DIR="/home/rawserver/UNIT3D_Docker/backups"
-SNAPSHOT_DIR="$BASE_BACKUP_DIR/snapshot_$NOW"
 DOCKER_DIR="/home/rawserver/UNIT3D_Docker"
+BASE_BACKUP_DIR="$DOCKER_DIR/backups"
+SNAPSHOT_DIR="$BASE_BACKUP_DIR/snapshot_$NOW"
 MAX_BACKUPS=3
 
 # Imágenes a blindar
 IMAGES=("unit3d_docker-app:latest" "getmeili/meilisearch:latest" "redis:alpine" "nginx:alpine" "mysql/mysql-server:8.0" "axllent/mailpit:latest")
+
+# --- 0. POSICIONAMIENTO TÁCTICO ---
+# (Esto soluciona el error de 'no configuration file provided')
+cd "$DOCKER_DIR"
 
 mkdir -p "$SNAPSHOT_DIR/docker_images"
 
@@ -15,7 +29,8 @@ echo "🎬 Iniciando BÚNKER TOTAL ($NOW)..."
 
 # 1. Volcado de DB en CALIENTE (El .sql limpio)
 echo "💾 Volcando base de datos unit3d (.sql)..."
-docker exec unit3d-db mysqldump -u unit3d -punit3d --no-tablespaces unit3d > "$SNAPSHOT_DIR/db_unit3d.sql"
+# Silenciamos el warning inofensivo de usar la contraseña en CLI
+docker exec unit3d-db mysqldump -u unit3d -punit3d --no-tablespaces unit3d > "$SNAPSHOT_DIR/db_unit3d.sql" 2>/dev/null
 
 # 2. COMPOSE STOP (Paramos máquinas para la copia sucia)
 echo "🛑 Deteniendo el ecosistema (stop)..."
@@ -30,14 +45,14 @@ for IMG in "${IMAGES[@]}"; do
 done
 
 # 4. COMPRIMIR PROYECTO (Cuerpo entero + Copia sucia de DB en frío)
-# Incluimos vendor y node_modules para recuperación Offline (Plug & Play)
-# Solo excluimos la propia carpeta de backups y logs innecesarios
 echo "📂 Comprimiendo UNIT3D_Docker (El todo-en-uno)..."
+# Excluimos los sockets (*.sock) porque tar no puede ni debe copiarlos
 tar -czf "$SNAPSHOT_DIR/unit3d_full_snapshot_$NOW.tar.gz" \
     --exclude='./backups' \
     --exclude='./storage/logs/*.log' \
     --exclude='./node_modules/.cache' \
-    --ignore-failed-read \
+    --exclude='*.sock' \
+    --exclude='*.sock.lock' \
     -C "$DOCKER_DIR" .
 
 # 5. ROTACIÓN DE BACKUPS
@@ -51,5 +66,5 @@ cd "$DOCKER_DIR"
 docker compose up -d
 
 echo "--------------------------------------------------"
-echo "✅ CICLO COMPLETADO CON ÉXITO"
+echo "✅ CICLO COMPLETADO CON ÉXITO Y VERIFICADO"
 echo "📀 Todo a salvo en: $SNAPSHOT_DIR"
