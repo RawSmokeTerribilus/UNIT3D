@@ -19,7 +19,7 @@ php artisan down
 ## 3. Update UNIT3D
 
 <video controls width="640" height="360">
-  <source src="/book/assets/update_unit3d.webm" type="video/webm">
+  <source src="./assets/update_unit3d.webm" type="video/webm">
   Your browser does not support the video tag.
 </video>
 
