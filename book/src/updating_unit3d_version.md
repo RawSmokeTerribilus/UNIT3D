@@ -4,7 +4,7 @@ Update UNIT3D to the latest version by reviewing the release notes and following
 
 ## 1. Create backup
 
-UNIT3D offers built-in backups. Refer to the [Backups documentation](/book/src/backups.md) for usage.
+UNIT3D offers built-in backups. Refer to the [Backups documentation](./backups.md) for usage.
 
 > [!IMPORTANT]
 > Ensure there is a complete backup before proceeding.
