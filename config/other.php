@@ -167,8 +167,9 @@ return [
     | 15 = Material Design v3 Navy
     | 16 = NOBS (Nuclear Order Bit Syndicate)
     | 17 = Refined NOBS
+    | 18 = Refined NOBS V2 (Retro)
     */
-    'default_style' => 17,
+    'default_style' => 18,
 
     /*
     |--------------------------------------------------------------------------

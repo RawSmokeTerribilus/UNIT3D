@@ -24,10 +24,12 @@
 /backups/*
 !/backups/cron_health.log
 ASSETS_REQUIRED.txt
-.zencoder/*
-.zenflow/*
-Initial_NOBS_art/*
-db_nobs_backup.sql
+.zencoder/
+.zenflow/
+.cspell/
+_config.yml
+*.sql
+Initial_NOBS_art/
 
 # System
 .DS_Store

@@ -181,6 +181,13 @@
                             >
                                 Refined NOBS
                             </option>
+                            <option
+                                class="form__option"
+                                value="18"
+                                @selected($user->settings->style === 18)
+                            >
+                                Refined NOBS V2 (Retro)
+                            </option>
                         </select>
                         <label class="form__label form__label--floating" for="style">Theme</label>
                     </p>

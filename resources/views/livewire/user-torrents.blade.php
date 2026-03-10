@@ -499,33 +499,27 @@
                                 </span>
                             </td>
                             <td class="user-torrents__ratio">
-                                @php($ratio = $history->actual_ratio < 1000 ? \number_format($history->actual_ratio, 2) : INF)
+                                @php($actualRatio = $history->actual_ratio < 1000 ? \number_format((float) $history->actual_ratio, 2) : '∞')
                                 <span
-                                    @if ($ratio < 1)
-                                        class="ratio-0{{ \floor($ratio * 10) }}"
-                                    @elseif ($ratio < 2)
-                                        class="ratio-10"
-                                    @elseif ($ratio < 5)
-                                        class="ratio-20"
-                                    @elseif ($ratio <= INF)
-                                        class="ratio-50"
-                                    @endif
+                                    @class([
+                                        'ratio-0' . \floor((float) $history->actual_ratio * 10) => $history->actual_ratio < 1,
+                                        'ratio-10' => $history->actual_ratio >= 1 && $history->actual_ratio < 2,
+                                        'ratio-20' => $history->actual_ratio >= 2 && $history->actual_ratio < 5,
+                                        'ratio-50' => $history->actual_ratio >= 5,
+                                    ])
                                     title="Actual ratio: {{ $history->actual_ratio }}"
                                 >
-                                    {{ $ratio }}
+                                    {{ $actualRatio }}
                                 </span>
                                 <br />
-                                @php($ratio = $history->ratio < 1000 ? \number_format($history->ratio, 2) : INF)
+                                @php($ratio = $history->ratio < 1000 ? \number_format((float) $history->ratio, 2) : '∞')
                                 <span
-                                    @if ($ratio < 1)
-                                        class="ratio-0{{ \floor($ratio * 10) }}"
-                                    @elseif ($ratio < 2)
-                                        class="ratio-10"
-                                    @elseif ($ratio < 5)
-                                        class="ratio-20"
-                                    @elseif ($ratio <= INF)
-                                        class="ratio-50"
-                                    @endif
+                                    @class([
+                                        'ratio-0' . \floor((float) $history->ratio * 10) => $history->ratio < 1,
+                                        'ratio-10' => $history->ratio >= 1 && $history->ratio < 2,
+                                        'ratio-20' => $history->ratio >= 2 && $history->ratio < 5,
+                                        'ratio-50' => $history->ratio >= 5,
+                                    ])
                                     title="Credited ratio: {{ $history->ratio }}"
                                 >
                                     {{ $ratio }}

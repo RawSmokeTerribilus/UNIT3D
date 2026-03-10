@@ -24,6 +24,7 @@ export default defineConfig({
         'resources/sass/themes/_material-design-v3-light.scss',
         'resources/sass/themes/_nobs.scss',
         'resources/sass/themes/_refined-nobs.scss',
+        'resources/sass/themes/_refined-nobs-v2.scss',
         'resources/sass/themes/_nord.scss',
         'resources/sass/themes/_revel.scss',
         'resources/js/app.js',

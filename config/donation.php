@@ -22,7 +22,7 @@ return [
     | Configure site to use Donation System
     |
     */
-    'is_enabled'   => true,
+    'is_enabled'   => false,
     'monthly_goal' => 100,
     'currency'     => 'EUR',
     'description'  => 'un billete pa un filete?',

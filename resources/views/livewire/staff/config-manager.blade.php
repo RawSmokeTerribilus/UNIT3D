@@ -33,7 +33,29 @@
                                 <tr wire:key="setting-{{ $setting->id }}">
                                     <td><strong>{{ $setting->key }}</strong></td>
                                     <td>
-                                        @if(is_numeric($setting->value))
+                                        @if($setting->key === 'other.default_style')
+                                            <select class="form__input" wire:model.defer="settingsData.{{ $setting->id }}">
+                                                <option value="0">Classic Light Theme</option>
+                                                <option value="1">Galactic Theme</option>
+                                                <option value="2">Dark Blue Theme</option>
+                                                <option value="3">Dark Green Theme</option>
+                                                <option value="4">Dark Pink Theme</option>
+                                                <option value="5">Dark Purple Theme</option>
+                                                <option value="6">Dark Red Theme</option>
+                                                <option value="7">Dark Teal Theme</option>
+                                                <option value="8">Dark Yellow Theme</option>
+                                                <option value="9">Cosmic Void</option>
+                                                <option value="10">Nord</option>
+                                                <option value="11">Revel</option>
+                                                <option value="12">Material Design v3 Light</option>
+                                                <option value="13">Material Design v3 Dark</option>
+                                                <option value="14">Material Design v3 Amoled</option>
+                                                <option value="15">Material Design v3 Navy</option>
+                                                <option value="16">NOBS (Nuclear Order Bit Syndicate)</option>
+                                                <option value="17">Refined NOBS</option>
+                                                <option value="18">Refined NOBS V2 (Retro)</option>
+                                            </select>
+                                        @elseif(is_numeric($setting->value))
                                             <input type="number" step="0.01" class="form__input" 
                                                 wire:model.defer="settingsData.{{ $setting->id }}">
                                         @elseif($setting->value === 'true' || $setting->value === 'false')

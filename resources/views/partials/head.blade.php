@@ -98,6 +98,10 @@
             @vite('resources/sass/themes/_refined-nobs.scss')
 
             @break
+        @case(18)
+            @vite('resources/sass/themes/_refined-nobs-v2.scss')
+
+            @break
     @endswitch
 
     @if (isset(auth()->user()->settings->custom_css))

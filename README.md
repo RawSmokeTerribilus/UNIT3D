@@ -348,6 +348,29 @@ Optimizaciones en **config/other.php**:
 
 ---
 
+### 8. **🎨 Refactorización Estética y Funcional: Tema Retro (v2)**
+
+**El Desafío**: El tema original `refined_nobs` presentaba problemas críticos de UX/UI: menús desplegables inaccesibles por conflictos de capas (z-index), botones que aparecían como bloques negros sin relieve, y una saturación de color rosa que dificultaba la lectura prolongada. Además, los ratios de torrents mostraban errores técnicos (`INF` o código HTML fugado).
+
+**Nuestra Solución (v2)**:
+
+```
+🚀 UI/UX REIMAGINADA:
+  • Base Dark Mode Profundo (#050507) con acentos neón (Púrpura a Fucsia) y Cyan.
+  • Corrección de Dropdowns: Ajuste de z-index y efectos hover para navegación fluida.
+  • Botones Profesionales: Bordes suavizados (6px), gradientes sutiles e iconos blancos.
+  • Legibilidad: Zebra-striping en todas las tablas y paneles de datos centrados.
+
+🛠️ FIXES TÉCNICOS:
+  • Ratio "INF" corregido: Sustituido por el símbolo de infinito (∞) más elegante.
+  • HTML Leak: Eliminación del código literal en las tablas de historia de torrents.
+  • Optimización Blade: Uso de directivas @class para un renderizado robusto y limpio.
+```
+
+**Resultado**: Una interfaz moderna, elegante y funcional que respeta la estética Cyberpunk/Synthwave de N.O.B.S sin sacrificar la usabilidad ni la claridad de los datos.
+
+---
+
 ## 📦 Dos Rutas de Instalación
 
 ### **🚀 Ruta A: Instalación Fresca (Nuevo Tracker)**

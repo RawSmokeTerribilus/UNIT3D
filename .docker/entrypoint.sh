@@ -16,9 +16,9 @@ if [ ! -d "vendor" ]; then
     composer install --no-interaction --prefer-dist --optimize-autoloader
 fi
 
-# Build assets if missing
-if [ ! -d "public/build" ]; then
-    echo "Frontend assets not found. Building..."
+# Build assets if missing or manifest is not found
+if [ ! -d "public/build" ] || [ ! -f "public/build/manifest.json" ]; then
+    echo "Frontend assets or Vite manifest not found. Building..."
     npm install
     npm run build
 fi
