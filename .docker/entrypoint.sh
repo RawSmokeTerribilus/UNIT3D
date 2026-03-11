@@ -31,22 +31,17 @@ mkdir -p storage/framework/cache/data \
          storage/logs \
          bootstrap/cache
 
-# 2. Ajuste masivo de permisos (0775)
-# Esto cubre: vendor, storage, public y bootstrap/cache
-echo "Ajustando permisos a 775 en carpetas críticas..."
-chmod -R 775 vendor storage public bootstrap/cache
-
-# 3. Ajuste masivo de dueño (www-data)
-# Para que el servidor web (PHP/Nginx) pueda escribir sin pedir permiso
-echo "Cambiando propietario a www-data..."
-chown -R www-data:www-data vendor storage public bootstrap/cache
-
-# Wait for MySQL to be ready
-echo "Waiting for database..."
+# Wait for MySQL AND Redis to be ready
+echo "Waiting for services to boot..."
 until nc -z db 3306; do
   sleep 1
 done
-echo "Database is ready!"
+# Asegúrate de que tu contenedor/servicio de redis se llama "redis" en el docker-compose. 
+# Si se llama de otra forma (ej: unit3d-redis), cambia el nombre aquí abajo:
+until nc -z redis 6379; do
+  sleep 1
+done
+echo "Database and Redis are ready!"
 
 # Generate key if not set
 if [ -z "$(grep APP_KEY .env | cut -d '=' -f2)" ]; then
@@ -54,15 +49,23 @@ if [ -z "$(grep APP_KEY .env | cut -d '=' -f2)" ]; then
     php artisan key:generate
 fi
 
-# Run migrations (skip schema load if it fails)
+# Run migrations
 echo "Running migrations..."
 php artisan migrate --force --schema-path=/dev/null || php artisan migrate --force
 
-# Actualizar Blacklist de Emails (Persistencia ante rebuilds/limpieza de caché)
+# Actualizar Blacklist de Emails ANTES de cambiar los permisos
 echo "Actualizando Blacklist de Emails..."
 php artisan auto:email-blacklist-update
 
+# 2. Ajuste masivo de permisos (0775)
+# Esto cubre: vendor, storage, public y bootstrap/cache
+echo "Ajustando permisos a 775 en carpetas críticas..."
+chmod -R 775 vendor storage public bootstrap/cache
+# EL TRUCO FINAL: Ajuste de dueño de ÚLTIMA HORA
+# Esto garantiza que cualquier archivo de caché que haya escupido el comando anterior, pase a ser de www-data
+echo "Cambiando propietario final a www-data..."
+chown -R www-data:www-data vendor storage public bootstrap/cache
+
 # Run Octane or PHP-FPM
 echo "Starting PHP-FPM..."
-
 exec php-fpm

@@ -106,6 +106,11 @@ Más allá de arreglar y dockerizar, añadimos **características autónomas y o
 
 **Resultado**: Un sistema listo para producción, autónomo y diseñado para **comunidades que gestionan su propia infraestructura**.
 
+### ⚠️ ADVERTENCIA CRÍTICA: Contraseña de Base de Datos en Backups
+El script de copias de seguridad (`backup.sh`) lleva la contraseña de MySQL incrustada a fuego en su código para garantizar la ejecución desatendida desde `cron`.
+Si en algún momento cambias la contraseña de la base de datos en el `.env` o en el orquestador, **DEBES** actualizarla a mano en la línea del `mysqldump` dentro de `backup.sh`.
+Si omites este paso, el volcado SQL fallará con un *Access Denied* de madrugada, el script abortará la compresión por seguridad (`set -e`) y te quedarás sin paracaídas.
+
 ---
 
 ## 🚀 Mejoras Clave

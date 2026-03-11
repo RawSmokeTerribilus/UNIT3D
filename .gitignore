@@ -30,6 +30,7 @@ ASSETS_REQUIRED.txt
 _config.yml
 *.sql
 Initial_NOBS_art/
+backup.sh
 
 # System
 .DS_Store
