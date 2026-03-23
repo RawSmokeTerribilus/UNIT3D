@@ -54,3 +54,4 @@ storage/backups/*
 # Bloqueo total de carpetas sensibles de rclone
 rclone_gdrive/config/
 rclone_gdrive/logs/
+rclone_gdrive/info-bkp.txt
