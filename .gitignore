@@ -32,9 +32,20 @@ _config.yml
 Initial_NOBS_art/
 backup.sh
 
-# System
+# System & Temp (Pulicionado)
 .DS_Store
 Thumbs.db
 .idea
 .vscode
 storage/backups/*
+*.log
+
+# Bloqueo recursivo absoluto para backups
+**/*.bkp
+**/*.bak
+**/*-deprecated*
+
+# Bloqueo total de carpetas sensibles de rclone
+rclone_gdrive/config/
+rclone_gdrive/logs/
+rclone_gdrive/info-bkp.txt
