@@ -3,6 +3,9 @@ services:
         image: nginx:alpine
         container_name: unit3d-web
         restart: unless-stopped
+        tmpfs:
+            - /var/www/html/storage/app/backups:size=10M,mode=777
+            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         ports:
             - "${HTTP_PORT:-8000}:80"
         volumes:
@@ -19,6 +22,9 @@ services:
             dockerfile: .docker/php/Dockerfile.app
         container_name: unit3d-app
         restart: unless-stopped
+        tmpfs:
+            - /var/www/html/storage/app/backups:size=10M,mode=777
+            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         volumes:
             - .:/var/www/html
         environment:
@@ -43,6 +49,9 @@ services:
         container_name: unit3d-scheduler
         restart: unless-stopped
         entrypoint: ["/usr/local/bin/entrypoint-scheduler.sh"]
+        tmpfs:
+            - /var/www/html/storage/app/backups:size=10M,mode=777
+            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         volumes:
             - .:/var/www/html
         environment:
@@ -67,6 +76,9 @@ services:
         container_name: unit3d-worker
         restart: unless-stopped
         entrypoint: ["/usr/local/bin/entrypoint-worker.sh"]
+        tmpfs:
+            - /var/www/html/storage/app/backups:size=10M,mode=777
+            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         volumes:
             - .:/var/www/html
         environment:
@@ -121,7 +133,7 @@ services:
             timeout: 5s
 
     meilisearch:
-        image: getmeili/meilisearch:latest
+        image: getmeili/meilisearch:v1.37.0
         container_name: unit3d-meilisearch
         restart: unless-stopped
         ports:
