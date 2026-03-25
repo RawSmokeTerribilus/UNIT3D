@@ -32,7 +32,13 @@ _config.yml
 Initial_NOBS_art/
 backup.sh
 
-# System & Temp (Pulicionado)
+# Backup files
+*.bkp
+
+# Published vendor assets
+/public/vendor/
+
+# System & Temp
 .DS_Store
 Thumbs.db
 .idea
@@ -48,4 +54,3 @@ storage/backups/*
 # Bloqueo total de carpetas sensibles de rclone
 rclone_gdrive/config/
 rclone_gdrive/logs/
-rclone_gdrive/info-bkp.txt
