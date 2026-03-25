@@ -15,6 +15,10 @@ class SendTelegramNotification implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $tries = 3;
+    public $backoff = [10, 60, 300];
+    public $timeout = 30;
+
     public function __construct(public Torrent $torrent)
     {
     }

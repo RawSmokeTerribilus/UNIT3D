@@ -29,6 +29,9 @@ services:
             - DB_PASSWORD=${DB_PASSWORD:-unit3d}
             - REDIS_HOST=redis
             - MEILISEARCH_HOST=http://meilisearch:7700
+            - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+            - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
+            - TELEGRAM_TOPIC_NOVEDADES=${TELEGRAM_TOPIC_NOVEDADES}
         depends_on:
             - db
             - redis
@@ -53,6 +56,9 @@ services:
             - DB_PASSWORD=${DB_PASSWORD:-unit3d}
             - REDIS_HOST=redis
             - MEILISEARCH_HOST=http://meilisearch:7700
+            - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+            - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
+            - TELEGRAM_TOPIC_NOVEDADES=${TELEGRAM_TOPIC_NOVEDADES}
         depends_on:
             - db
             - redis
@@ -77,6 +83,9 @@ services:
             - DB_PASSWORD=${DB_PASSWORD:-unit3d}
             - REDIS_HOST=redis
             - MEILISEARCH_HOST=http://meilisearch:7700
+            - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+            - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
+            - TELEGRAM_TOPIC_NOVEDADES=${TELEGRAM_TOPIC_NOVEDADES}
         depends_on:
             - db
             - redis
