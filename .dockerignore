@@ -33,3 +33,6 @@ rclone_gdrive/
 .DS_Store
 .idea
 .vscode
+
+# Telegram implementation docs
+TELEGRAM_IMPLEMENTATION_SUMMARY.md

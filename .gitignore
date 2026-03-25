@@ -58,3 +58,6 @@ rclone_gdrive/info-bkp.txt
 public/vendor/
 .docker/
 vendor/
+
+# Telegram implementation docs (contains sensitive data)
+TELEGRAM_IMPLEMENTATION_SUMMARY.md
