@@ -14,8 +14,8 @@ class TelegramService
      */
     public function sendAnnouncement(string $text, ?string $photoUrl = null, ?string $threadId = null): bool
     {
-        $token = config('services.telegram.bot_token');
-        $chatId = config('services.telegram.group_id');
+        $token = config('services.telegram.token');
+        $chatId = config('services.telegram.chat_id');
         
         // Si hay foto, disparamos sendPhoto. Si no, sendMessage.
         $method = $photoUrl ? 'sendPhoto' : 'sendMessage';
@@ -46,8 +46,8 @@ class TelegramService
      */
     public function sendMessage(string $text, ?string $chatId = null, ?string $threadId = null): bool
     {
-        $token = config('services.telegram.bot_token');
-        $chatId = $chatId ?? config('services.telegram.group_id');
+        $token = config('services.telegram.token');
+        $chatId = $chatId ?? config('services.telegram.chat_id');
 
         if (empty($token) || empty($chatId)) {
             Log::warning('TelegramService: Configuración incompleta en el .env');
@@ -76,8 +76,8 @@ class TelegramService
      */
     public function kickUser(string $telegramChatId): bool
     {
-        $token = config('services.telegram.bot_token');
-        $chatId = config('services.telegram.group_id');
+        $token = config('services.telegram.token');
+        $chatId = config('services.telegram.chat_id');
 
         try {
             $response = Http::post("https://api.telegram.org/bot{$token}/banChatMember", [

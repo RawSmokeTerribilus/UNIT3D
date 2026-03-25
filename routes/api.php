@@ -57,6 +57,11 @@ Route::middleware(['auth:'.AuthGuard::API->value, 'banned'])->group(function ():
 });
 
 // Internal front-end web API routes
+// Telegram Webhook (no auth — Telegram sends updates directly)
+Route::post('/telegram/webhook', [App\Http\Controllers\API\TelegramWebhookController::class, 'handle'])
+    ->withoutMiddleware(['throttle:'.GlobalRateLimit::API->value, 'auth:'.AuthGuard::API->value, 'banned'])
+    ->name('api.telegram.webhook');
+
 Route::name('api.')->middleware([MiddlewareGroup::WEB->value, 'auth', 'banned', 'verified'])->group(function (): void {
     Route::prefix('bookmarks')->name('bookmarks.')->group(function (): void {
         Route::post('/{torrentId}', [App\Http\Controllers\API\BookmarkController::class, 'store'])->name('store');

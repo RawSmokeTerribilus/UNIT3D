@@ -22,8 +22,10 @@ use App\Models\Ban;
 use App\Models\Group;
 use App\Models\User;
 use App\Notifications\UserBan;
+use App\Services\TelegramService;
 use App\Services\Unit3dAnnounce;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @see \Tests\Todo\Feature\Http\Controllers\Staff\BanControllerTest
@@ -62,6 +64,17 @@ class BanController extends Controller
         cache()->forget('user:'.$user->passkey);
 
         Unit3dAnnounce::addUser($user);
+
+        // Guillotina Telegram: kick del grupo si estaba vinculado
+        if ($user->telegram_chat_id) {
+            try {
+                (new TelegramService())->kickUser((string) $user->telegram_chat_id);
+            } catch (\Throwable $e) {
+                Log::warning('Telegram kick failed for user '.$user->username, ['error' => $e->getMessage()]);
+            }
+
+            $user->update(['telegram_chat_id' => null, 'telegram_token' => null]);
+        }
 
         $user->notify(new UserBan($ban));
 

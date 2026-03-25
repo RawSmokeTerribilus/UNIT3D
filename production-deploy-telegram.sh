@@ -3,9 +3,9 @@
 ################################################################################
 #                                                                              #
 #   UNIT3D TELEGRAM IMPLEMENTATION - PRODUCTION DEPLOYMENT SCRIPT             #
-#   Version: 1.0.0                                                            #
+#   Version: 4.0.0                                                            #
 #   Purpose: Safe, idempotent deployment of Telegram features to production   #
-#   Critical: Este script implementa todas las correcciones necesarias        #
+#   Updated: 2026-03-25 - Ban→Kick, Invite Link, config key validation        #
 #                                                                              #
 ################################################################################
 
@@ -47,6 +47,8 @@ DB_USER=""
 DB_PASS=""
 DB_NAME=""
 TELEGRAM_TOKEN=""
+TELEGRAM_BOT_USERNAME=""
+TELEGRAM_GROUP_INVITE_LINK=""
 
 # Environment validation
 validate_environment() {
@@ -70,6 +72,16 @@ validate_environment() {
     
     if ! grep -q "TELEGRAM_TOPIC_NOVEDADES" .env; then
         log_error "TELEGRAM_TOPIC_NOVEDADES not found in .env"
+        exit 1
+    fi
+    
+    if ! grep -q "TELEGRAM_BOT_USERNAME" .env; then
+        log_error "TELEGRAM_BOT_USERNAME not found in .env"
+        exit 1
+    fi
+    
+    if ! grep -q "TELEGRAM_GROUP_INVITE_LINK" .env; then
+        log_error "TELEGRAM_GROUP_INVITE_LINK not found in .env (required for group invite button)"
         exit 1
     fi
     
@@ -124,6 +136,20 @@ extract_env_variables() {
     TELEGRAM_TOKEN=$(grep "TELEGRAM_BOT_TOKEN=" .env | sed 's/.*TELEGRAM_BOT_TOKEN=//;s/^"//;s/"$//')
     if [ -z "$TELEGRAM_TOKEN" ]; then
         log_error "TELEGRAM_BOT_TOKEN not found in .env"
+        return 1
+    fi
+    
+    # Extract Telegram bot username
+    TELEGRAM_BOT_USERNAME=$(grep "TELEGRAM_BOT_USERNAME=" .env | sed 's/.*TELEGRAM_BOT_USERNAME=//;s/^"//;s/"$//')
+    if [ -z "$TELEGRAM_BOT_USERNAME" ]; then
+        log_error "TELEGRAM_BOT_USERNAME not found in .env"
+        return 1
+    fi
+    
+    # Extract Telegram group invite link
+    TELEGRAM_GROUP_INVITE_LINK=$(grep "TELEGRAM_GROUP_INVITE_LINK=" .env | sed 's/.*TELEGRAM_GROUP_INVITE_LINK=//;s/^"//;s/"$//')
+    if [ -z "$TELEGRAM_GROUP_INVITE_LINK" ]; then
+        log_error "TELEGRAM_GROUP_INVITE_LINK not found in .env"
         return 1
     fi
     
@@ -196,10 +222,14 @@ verify_code_changes() {
     
     local files_to_check=(
         "app/Jobs/SendTelegramNotification.php"
-        "app/Services/TelegramService.php"
-        "app/Http/Controllers/API/TelegramWebhookController.php"
         "app/Observers/TorrentObserver.php"
+        "app/Http/Controllers/User/TelegramController.php"
+        "app/Http/Controllers/API/TelegramWebhookController.php"
+        "app/Http/Controllers/Staff/BanController.php"
+        "app/Services/TelegramService.php"
         "config/services.php"
+        "resources/views/partials/telegram_settings.blade.php"
+        "resources/views/user/notification-setting/edit.blade.php"
         "database/migrations/2026_03_24_010501_add_telegram_fields_to_users_table.php"
     )
     
@@ -211,76 +241,139 @@ verify_code_changes() {
     done
     
     # Verify SendTelegramNotification has retry policy
-    if ! grep -q "public \$tries = 3" app/Jobs/SendTelegramNotification.php; then
-        log_error "SendTelegramNotification missing retry policy ($tries)"
+    if ! grep -q 'public \$tries = 3' app/Jobs/SendTelegramNotification.php; then
+        log_error "SendTelegramNotification missing retry policy (\$tries)"
         return 1
     fi
     
-    # Verify TelegramService uses correct API
-    if ! grep -q "banChatMember" app/Services/TelegramService.php; then
-        log_error "TelegramService using deprecated API (should use banChatMember)"
+    # Verify languageToFlag method exists (flag emojis for audio/subs)
+    if ! grep -q 'languageToFlag' app/Jobs/SendTelegramNotification.php; then
+        log_error "SendTelegramNotification missing languageToFlag method"
         return 1
     fi
     
-    # Verify TelegramWebhookController has DB transaction
-    if ! grep -q "DB::transaction" app/Http/Controllers/API/TelegramWebhookController.php; then
-        log_error "TelegramWebhookController missing database transaction"
+    # Verify Observer dispatches to the correct Job
+    if ! grep -q 'SendTelegramNotification::dispatch' app/Observers/TorrentObserver.php; then
+        log_error "TorrentObserver not dispatching SendTelegramNotification"
         return 1
     fi
+    
+    # Verify notification-setting view includes telegram partial
+    if ! grep -q "@include('partials.telegram_settings')" resources/views/user/notification-setting/edit.blade.php; then
+        log_error "Telegram settings partial not included in notification-setting view"
+        return 1
+    fi
+    
+    # Verify token generation uses TRK- prefix
+    if ! grep -q "'TRK-'" app/Http/Controllers/User/TelegramController.php; then
+        log_error "TelegramController token generation missing TRK- prefix"
+        return 1
+    fi
+    
+    # Verify webhook controller handles /start, /status, /help
+    if ! grep -q 'handleStart' app/Http/Controllers/API/TelegramWebhookController.php; then
+        log_error "WebhookController missing handleStart method"
+        return 1
+    fi
+    if ! grep -q 'handleStatus' app/Http/Controllers/API/TelegramWebhookController.php; then
+        log_error "WebhookController missing handleStatus method"
+        return 1
+    fi
+    
+    # Verify sendMessageWithButton method exists (group invite inline keyboard)
+    if ! grep -q 'sendMessageWithButton' app/Http/Controllers/API/TelegramWebhookController.php; then
+        log_error "WebhookController missing sendMessageWithButton method (invite link button)"
+        return 1
+    fi
+    
+    # Verify TelegramService uses correct config keys (token, not bot_token)
+    if grep -q "config('services.telegram.bot_token')" app/Services/TelegramService.php; then
+        log_error "TelegramService.php still uses deprecated 'bot_token' key — must be 'token'"
+        return 1
+    fi
+    if grep -q "config('services.telegram.group_id')" app/Services/TelegramService.php; then
+        log_error "TelegramService.php still uses deprecated 'group_id' key — must be 'chat_id'"
+        return 1
+    fi
+    
+    # Verify BanController has Telegram kick integration
+    if ! grep -q 'kickUser' app/Http/Controllers/Staff/BanController.php; then
+        log_error "BanController missing kickUser() call — ban won't kick from Telegram group"
+        return 1
+    fi
+    
+    # Verify config/services.php has group_invite_link key
+    if ! grep -q 'group_invite_link' config/services.php; then
+        log_error "config/services.php missing 'group_invite_link' key in telegram section"
+        return 1
+    fi
+    
+    # Validate PHP syntax of key files
+    log_info "  Checking PHP syntax..."
+    for phpfile in app/Jobs/SendTelegramNotification.php app/Observers/TorrentObserver.php app/Http/Controllers/User/TelegramController.php app/Http/Controllers/API/TelegramWebhookController.php app/Services/TelegramService.php app/Http/Controllers/Staff/BanController.php; do
+        if ! docker compose exec -T app php -l "$phpfile" >> "$DEPLOYMENT_LOG" 2>&1; then
+            log_error "Syntax error in $phpfile"
+            return 1
+        fi
+    done
     
     log_success "All code changes verified"
 }
 
-# Phase 6: Rebuild Docker containers with env vars
-rebuild_containers() {
-    log_info "Phase 6: Rebuilding containers with Telegram environment variables..."
+# Phase 6: Restart worker and clear caches (NO full rebuild - avoids downtime)
+restart_services() {
+    log_info "Phase 6: Restarting worker and clearing caches..."
     
-    # Verify docker-compose has TELEGRAM_* env vars in app, scheduler, worker
-    if ! grep -q "TELEGRAM_BOT_TOKEN" docker-compose.yml; then
-        log_error "docker-compose.yml missing TELEGRAM_BOT_TOKEN environment variable"
-        return 1
-    fi
-    
-    log_info "Rebuilding containers..."
-    docker compose down --remove-orphans >> "$DEPLOYMENT_LOG" 2>&1
-    
-    if docker compose up -d --build 2>>"$DEPLOYMENT_LOG"; then
-        log_success "Containers rebuilt and started"
-    else
-        log_error "Container rebuild failed"
-        return 1
-    fi
-    
-    # Wait for containers to be healthy
-    log_info "Waiting for containers to be healthy (timeout 60s)..."
-    local timeout=60
-    local elapsed=0
-    while [ $elapsed -lt $timeout ]; do
-        if docker compose exec -T app test -f /var/www/html/bootstrap/app.php 2>/dev/null; then
-            log_success "Application container is healthy"
-            break
-        fi
-        sleep 2
-        elapsed=$((elapsed + 2))
-    done
-    
-    if [ $elapsed -ge $timeout ]; then
-        log_warning "Container health check timed out - may need manual verification"
-    fi
-}
-
-# Phase 7: Clear and warm up Laravel caches
-clear_caches() {
-    log_info "Phase 7: Clearing and warming up caches..."
-    
+    # Clear all caches from the app container
     docker compose exec -T app php artisan config:clear >> "$DEPLOYMENT_LOG" 2>&1
     docker compose exec -T app php artisan cache:clear >> "$DEPLOYMENT_LOG" 2>&1
     docker compose exec -T app php artisan view:clear >> "$DEPLOYMENT_LOG" 2>&1
+    docker compose exec -T app php artisan route:clear >> "$DEPLOYMENT_LOG" 2>&1
     
-    # Warm up config
+    # Warm up config cache
     docker compose exec -T app php artisan config:cache >> "$DEPLOYMENT_LOG" 2>&1
     
-    log_success "Caches cleared and warmed up"
+    # CRITICAL: Restart the WORKER container so it picks up code changes
+    # The worker runs 'php artisan queue:work' as PID 1 and caches classes in memory
+    log_info "  Restarting worker container..."
+    if docker compose restart worker >> "$DEPLOYMENT_LOG" 2>&1; then
+        log_success "  Worker container restarted"
+    else
+        log_error "  Failed to restart worker container"
+        return 1
+    fi
+    
+    # Wait for worker to be back up
+    sleep 5
+    local worker_status=$(docker compose ps worker --format "{{.Status}}" 2>/dev/null)
+    if echo "$worker_status" | grep -q "Up"; then
+        log_success "  Worker is running: $worker_status"
+    else
+        log_error "  Worker failed to restart: $worker_status"
+        return 1
+    fi
+    
+    log_success "Services restarted and caches cleared"
+}
+
+# Phase 7: Verify telegram routes
+verify_routes() {
+    log_info "Phase 7: Verifying Telegram routes..."
+    
+    if docker compose exec -T app php artisan route:list 2>>"$DEPLOYMENT_LOG" | grep -q "users.telegram.reset"; then
+        log_success "Telegram reset route is registered (users.telegram.reset)"
+    else
+        log_error "Telegram reset route not found"
+        return 1
+    fi
+    
+    # Verify webhook route
+    if docker compose exec -T app php artisan route:list 2>>"$DEPLOYMENT_LOG" | grep -q "api/telegram/webhook"; then
+        log_success "Telegram webhook route is registered (api/telegram/webhook)"
+    else
+        log_error "Telegram webhook route not found in api.php"
+        return 1
+    fi
 }
 
 # Phase 8: End-to-end validation
@@ -328,23 +421,67 @@ validate_deployment() {
     fi
     
     # Test 5: Validate Telegram configuration in application
-    docker compose exec -T app php artisan tinker --execute="\$config = config('services.telegram'); echo 'Token: ' . (empty(\$config['token']) ? 'MISSING' : 'OK') . ', Chat: ' . (empty(\$config['chat_id']) ? 'MISSING' : 'OK');" 2>>"$DEPLOYMENT_LOG"
+    docker compose exec -T app php artisan tinker --execute="\$config = config('services.telegram'); echo 'Token: ' . (empty(\$config['token']) ? 'MISSING' : 'OK') . ', Chat: ' . (empty(\$config['chat_id']) ? 'MISSING' : 'OK') . ', InviteLink: ' . (empty(\$config['group_invite_link']) ? 'MISSING' : 'OK');" 2>>"$DEPLOYMENT_LOG"
     
     log_success "End-to-end validation completed"
 }
 
-# Generate deployment report
-generate_report() {
-    log_info "Phase 9: Generating deployment report..."
-    
-    cat > "$BACKUP_DIR/DEPLOYMENT_REPORT.md" << 'EOF'
-# Telegram Implementation - Production Deployment Report
 
-## Deployment Information
-- **Date**: $(date)
-- **Environment**: ${ENVIRONMENT}
-- **Backup Location**: ${BACKUP_DIR}
-- **Log File**: ${DEPLOYMENT_LOG}
+
+# Phase 9: Verify UI injection of Telegram settings
+verify_ui_injection() {
+    log_info "Phase 9: Verifying Telegram UI injection..."
+    
+    local notification_edit="resources/views/user/notification-setting/edit.blade.php"
+    local telegram_partial="resources/views/partials/telegram_settings.blade.php"
+    
+    # Verify partial exists
+    if [ ! -f "$telegram_partial" ]; then
+        log_error "Telegram partial not found: $telegram_partial"
+        return 1
+    fi
+    
+    # Verify inclusion in notification settings view
+    if ! grep -q "@include('partials.telegram_settings')" "$notification_edit"; then
+        log_error "Telegram settings not injected into notification settings view"
+        return 1
+    fi
+    
+    log_success "Telegram UI properly injected in notification settings"
+}
+
+# Phase 9: Populate telegram tokens for all users
+populate_telegram_tokens() {
+    log_info "Phase 10: Populating telegram tokens for users..."
+    
+    # Check if command exists
+    if ! docker compose exec -T app php artisan list 2>/dev/null | grep -q 'telegram:generate-tokens'; then
+        log_warning "telegram:generate-tokens command not available yet, skipping"
+        return 0
+    fi
+    
+    if docker compose exec -T app php artisan telegram:generate-tokens --force 2>>"$DEPLOYMENT_LOG"; then
+        log_success "Telegram tokens generated for all users"
+    else
+        log_error "Failed to generate telegram tokens (non-critical)"
+        return 0
+    fi
+}
+
+# Phase 11: Generate deployment report
+generate_report() {
+    log_info "Phase 11: Generating deployment report..."
+    
+    # Write report header with expanded variables, then static body with 'EOF' (safe for backticks)
+    {
+        echo "# Telegram Implementation - Production Deployment Report"
+        echo ""
+        echo "## Deployment Information"
+        echo "- **Date**: $(date)"
+        echo "- **Environment**: ${ENVIRONMENT}"
+        echo "- **Backup Location**: ${BACKUP_DIR}"
+        echo "- **Log File**: ${DEPLOYMENT_LOG}"
+        cat << 'EOF'
 
 ## Changes Applied
 
@@ -415,7 +552,7 @@ generate_report() {
 If deployment fails, restore the database:
 
 ```bash
-docker compose exec -T db mysql -u$DB_USER -p$DB_PASS $DB_NAME < ${BACKUP_DIR}/unit3d_pre_telegram_migration.sql
+docker compose exec -T db mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "${BACKUP_DIR}/unit3d_pre_telegram_migration.sql"
 ```
 
 Then redeploy or investigate errors in `${DEPLOYMENT_LOG}`
@@ -428,6 +565,7 @@ For issues, check:
 - `docker compose logs app worker`
 
 EOF
+    } > "$BACKUP_DIR/DEPLOYMENT_REPORT.md"
     
     log_success "Deployment report generated at $BACKUP_DIR/DEPLOYMENT_REPORT.md"
 }
@@ -447,8 +585,10 @@ main() {
     validate_telegram_api || exit 1
     apply_migrations || exit 1
     verify_code_changes || exit 1
-    rebuild_containers || exit 1
-    clear_caches || exit 1
+    verify_ui_injection || exit 1
+    populate_telegram_tokens || exit 1
+    restart_services || exit 1
+    verify_routes || exit 1
     validate_deployment || exit 1
     generate_report || exit 1
     

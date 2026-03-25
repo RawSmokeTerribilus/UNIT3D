@@ -15,7 +15,12 @@ class TorrentObserver
             && $torrent->status === ModerationStatus::APPROVED
             && $torrent->getOriginal('status') !== ModerationStatus::APPROVED->value
         ) {
-            SendTelegramNotification::dispatch($torrent);
+            if ($torrent->user) {
+                SendTelegramNotification::dispatch(
+                    $torrent->load(['category', 'type', 'movie', 'tv']),
+                    $torrent->user,
+                );
+            }
         }
     }
 }
