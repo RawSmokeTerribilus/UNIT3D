@@ -1,13 +1,10 @@
 services:
     web:
         image: nginx:alpine
-        container_name: unit3d-web
+        container_name: unit3d-staging-web
         restart: unless-stopped
-        tmpfs:
-            - /var/www/html/storage/app/backups:size=10M,mode=777
-            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         ports:
-            - "${HTTP_PORT:-8000}:80"
+            - "${HTTP_PORT:-58080}:80"
         volumes:
             - .:/var/www/html
             - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
@@ -20,11 +17,8 @@ services:
         build:
             context: .
             dockerfile: .docker/php/Dockerfile.app
-        container_name: unit3d-app
+        container_name: unit3d-staging-app
         restart: unless-stopped
-        tmpfs:
-            - /var/www/html/storage/app/backups:size=10M,mode=777
-            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         volumes:
             - .:/var/www/html
         environment:
@@ -46,12 +40,9 @@ services:
         build:
             context: .
             dockerfile: .docker/php/Dockerfile.app
-        container_name: unit3d-scheduler
+        container_name: unit3d-staging-scheduler
         restart: unless-stopped
         entrypoint: ["/usr/local/bin/entrypoint-scheduler.sh"]
-        tmpfs:
-            - /var/www/html/storage/app/backups:size=10M,mode=777
-            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         volumes:
             - .:/var/www/html
         environment:
@@ -73,12 +64,9 @@ services:
         build:
             context: .
             dockerfile: .docker/php/Dockerfile.app
-        container_name: unit3d-worker
+        container_name: unit3d-staging-worker
         restart: unless-stopped
         entrypoint: ["/usr/local/bin/entrypoint-worker.sh"]
-        tmpfs:
-            - /var/www/html/storage/app/backups:size=10M,mode=777
-            - /var/www/html/storage/app/backup-temp:size=2G,mode=777
         volumes:
             - .:/var/www/html
         environment:
@@ -98,10 +86,10 @@ services:
 
     db:
         image: mysql/mysql-server:8.0
-        container_name: unit3d-db
+        container_name: unit3d-staging-db
         restart: unless-stopped
         ports:
-            - "${FORWARD_DB_PORT:-3306}:3306"
+            - "${FORWARD_DB_PORT:-53306}:3306"
         environment:
             - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-unit3d}
             - MYSQL_ROOT_HOST=%
@@ -109,7 +97,7 @@ services:
             - MYSQL_USER=${DB_USERNAME:-unit3d}
             - MYSQL_PASSWORD=${DB_PASSWORD:-unit3d}
         volumes:
-            - ./.docker/data/mysql:/var/lib/mysql
+            - ./.docker/data/mysql:/var/lib/mysql:Z
         networks:
             - unit3d
         healthcheck:
@@ -119,10 +107,10 @@ services:
 
     redis:
         image: redis:alpine
-        container_name: unit3d-redis
+        container_name: unit3d-staging-redis
         restart: unless-stopped
         ports:
-            - "${FORWARD_REDIS_PORT:-6379}:6379"
+            - "${FORWARD_REDIS_PORT:-56379}:6379"
         volumes:
             - ./.docker/data/redis:/data
         networks:
@@ -133,11 +121,11 @@ services:
             timeout: 5s
 
     meilisearch:
-        image: getmeili/meilisearch:v1.37.0
-        container_name: unit3d-meilisearch
+        image: getmeili/meilisearch:latest
+        container_name: unit3d-staging-meilisearch
         restart: unless-stopped
         ports:
-            - "${FORWARD_MEILISEARCH_PORT:-7700}:7700"
+            - "${FORWARD_MEILISEARCH_PORT:-57700}:7700"
         environment:
             - MEILI_NO_ANALYTICS=true
             - MEILI_MASTER_KEY=${MEILISEARCH_KEY}
@@ -152,11 +140,11 @@ services:
 
     mailpit:
         image: axllent/mailpit:latest
-        container_name: unit3d-mailpit
+        container_name: unit3d-staging-mailpit
         restart: unless-stopped
         ports:
-            - "${FORWARD_MAILPIT_PORT:-1025}:1025"
-            - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
+            - "${FORWARD_MAILPIT_PORT:-51025}:1025"
+            - "${FORWARD_MAILPIT_DASHBOARD_PORT:-58025}:8025"
         networks:
             - unit3d
 

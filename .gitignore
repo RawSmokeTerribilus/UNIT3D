@@ -55,3 +55,6 @@ storage/backups/*
 rclone_gdrive/config/
 rclone_gdrive/logs/
 rclone_gdrive/info-bkp.txt
+public/vendor/
+.docker/
+vendor/

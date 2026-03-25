@@ -31,4 +31,10 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+
+    'telegram' => [
+        'token'    => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id'  => env('TELEGRAM_GROUP_ID'),
+        'topic_id' => env('TELEGRAM_TOPIC_NOVEDADES'),
+    ],
 ];
