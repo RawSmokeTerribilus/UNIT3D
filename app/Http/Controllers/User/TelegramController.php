@@ -42,7 +42,7 @@ class TelegramController extends Controller
         }
 
         return redirect()
-            ->route('users.notification_settings.edit', ['user' => $user->username])
+            ->back()
             ->with('success', 'Telegram desvinculado y token regenerado correctamente.');
     }
 }
