@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-155df213.js";
+            window.path_to_searchindex_js = "searchindex-c3208e56.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-bff7e473.js"></script>
+        <script src="toc-82aefe5b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -456,6 +456,8 @@ sudo php artisan queue:restart
 </code></pre>
 </li>
 </ol>
+<h2 id="6-cloud-backup-sync-google-drive"><a class="header" href="#6-cloud-backup-sync-google-drive">6. Cloud Backup Sync (Google Drive)</a></h2>
+<p>The local backup system described above stores snapshots on the host filesystem. An optional rclone layer complements this by syncing those snapshots to an encrypted Google Drive remote (<code>gdrive_crypt:</code>), providing an off-site cold-backup tier. Syncs run via an ephemeral Docker container defined in <code>rclone_gdrive/docker-compose.yml</code> and can be automated with a cron job. For full setup and restore instructions, see <a href="#google-drive-backup-sync">Google Drive Backup Sync</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="basic-tuning"><a class="header" href="#basic-tuning">Basic tuning</a></h1>
 <!-- cspell:ignore unixsocket,unixsocketperm,usermod,ondemand,curlopt,cainfo -->
@@ -1580,6 +1582,285 @@ sudo php artisan queue:restart
 </ol>
 <h2 id="see-also"><a class="header" href="#see-also">See also</a></h2>
 <p>For further details, refer to the <a href="https://www.meilisearch.com/docs/guides/deployment/running_production">official Meilisearch documentation</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="telegram-integration"><a class="header" href="#telegram-integration">Telegram Integration</a></h1>
+<p>This page documents the full Telegram bot integration for UNIT3D trackers: deep-link account linking, queued torrent notifications, automatic kick on ban, and group invite flow.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>The webhook endpoint requires an HTTPS domain. Telegram does not deliver webhooks to plain HTTP URLs.</p>
+</blockquote>
+<h2 id="1-prerequisites"><a class="header" href="#1-prerequisites">1. Prerequisites</a></h2>
+<ul>
+<li>A Telegram bot created via <a href="https://t.me/BotFather">@BotFather</a>.</li>
+<li>A Telegram <strong>supergroup</strong> (not a regular group) with the bot added as an administrator. The bot must have <strong>Ban users</strong> and <strong>Invite users via link</strong> permissions.</li>
+<li>Your UNIT3D instance must be accessible over HTTPS.</li>
+<li>Redis must be configured as the Laravel queue backend (the notification job is queued, not synchronous).</li>
+</ul>
+<h2 id="2-environment-variables"><a class="header" href="#2-environment-variables">2. Environment Variables</a></h2>
+<p>Add the following variables to your <code>.env</code> file:</p>
+<pre><code class="language-env">TELEGRAM_BOT_TOKEN=123456789:ABCDefGHIjklMNOpqrsTuvWXyz_1234567890
+TELEGRAM_BOT_USERNAME=your_bot_username
+TELEGRAM_GROUP_ID=-100XXXXXXXXXX
+TELEGRAM_TOPIC_NOVEDADES=6
+TELEGRAM_GROUP_INVITE_LINK=https://t.me/+XXXXXXXXXXXXXX
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>How to obtain</th></tr>
+</thead>
+<tbody>
+<tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td><a href="https://t.me/BotFather">@BotFather</a> → <code>/newbot</code> or <code>/token</code></td></tr>
+<tr><td><code>TELEGRAM_BOT_USERNAME</code></td><td>The bot’s <code>@username</code> without the <code>@</code></td></tr>
+<tr><td><code>TELEGRAM_GROUP_ID</code></td><td>Add <a href="https://t.me/raw_data_bot">@raw_data_bot</a> to your group, send any message; the chat ID is shown (starts with <code>-100</code>)</td></tr>
+<tr><td><code>TELEGRAM_TOPIC_NOVEDADES</code></td><td>In a forum-enabled supergroup, right-click the announcements topic → Copy Link → the number after the last <code>/</code></td></tr>
+<tr><td><code>TELEGRAM_GROUP_INVITE_LINK</code></td><td>Generate via API: <code>curl "https://api.telegram.org/bot&lt;TOKEN&gt;/createChatInviteLink" -d "chat_id=&lt;GROUP_ID&gt;"</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="3-configuration"><a class="header" href="#3-configuration">3. Configuration</a></h2>
+<p>The <code>config/services.php</code> file maps these variables to the <code>telegram</code> service key:</p>
+<pre><code class="language-php">'telegram' =&gt; [
+    'token'             =&gt; env('TELEGRAM_BOT_TOKEN'),
+    'chat_id'           =&gt; env('TELEGRAM_GROUP_ID'),
+    'topic_id'          =&gt; env('TELEGRAM_TOPIC_NOVEDADES'),
+    'bot_username'      =&gt; env('TELEGRAM_BOT_USERNAME'),
+    'group_invite_link' =&gt; env('TELEGRAM_GROUP_INVITE_LINK'),
+],
+</code></pre>
+<p>All application code reads these values via <code>config('services.telegram.*')</code>.</p>
+<h2 id="4-database-migration"><a class="header" href="#4-database-migration">4. Database Migration</a></h2>
+<p>Run the migration to add the required columns to the <code>users</code> table:</p>
+<pre><code class="language-sh">php artisan migrate
+</code></pre>
+<p>This adds:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Column</th><th>Type</th><th>Constraints</th></tr>
+</thead>
+<tbody>
+<tr><td><code>telegram_chat_id</code></td><td><code>BIGINT</code></td><td>nullable, unique</td></tr>
+<tr><td><code>telegram_token</code></td><td><code>VARCHAR(64)</code></td><td>nullable, unique</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="5-webhook-setup"><a class="header" href="#5-webhook-setup">5. Webhook Setup</a></h2>
+<p>Register the webhook with Telegram so updates are delivered to your application:</p>
+<pre><code class="language-sh">curl -X POST "https://api.telegram.org/bot&lt;YOUR_BOT_TOKEN&gt;/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://your-domain.tld/api/telegram/webhook"}'
+</code></pre>
+<p>Verify the webhook is active:</p>
+<pre><code class="language-sh">curl "https://api.telegram.org/bot&lt;YOUR_BOT_TOKEN&gt;/getWebhookInfo"
+</code></pre>
+<p>The response should show <code>"url"</code> set to your endpoint and <code>"pending_update_count": 0</code>.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>The webhook route at <code>POST /api/telegram/webhook</code> intentionally excludes the <code>throttle:api</code>, <code>auth:api</code>, and <code>banned</code> middleware. Telegram’s servers must be able to reach it without authentication.</p>
+</blockquote>
+<h2 id="6-user-flow-linking-an-account"><a class="header" href="#6-user-flow-linking-an-account">6. User Flow: Linking an Account</a></h2>
+<p>Linking works via a deep-link handshake using a <code>TRK-</code> prefixed token:</p>
+<ol>
+<li>The user navigates to <strong>Notification Settings</strong> in the tracker UI.</li>
+<li>A unique token of the form <code>TRK-</code> + 32 random alphanumeric characters (36 characters total) is displayed alongside a <strong>Link with Bot</strong> button.</li>
+<li>Clicking the button opens a <code>t.me/&lt;bot_username&gt;?start=TRK-xxxxx</code> deep link in Telegram.</li>
+<li>The bot receives a <code>/start TRK-xxxxx</code> message.</li>
+<li>The webhook controller looks up the token in the database using a pessimistic lock (<code>lockForUpdate()</code>) inside a transaction to prevent race conditions.</li>
+<li>On success, <code>telegram_chat_id</code> is set to the user’s Telegram chat ID, and <code>telegram_token</code> is cleared to <code>null</code> (one-time use).</li>
+<li>The bot sends a confirmation message. If <code>TELEGRAM_GROUP_INVITE_LINK</code> is configured, an inline keyboard button to join the group is included.</li>
+</ol>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>Each token is single-use. Once linked, the token is cleared. Users must reset their token to re-link.</p>
+</blockquote>
+<h2 id="7-user-flow-bot-commands"><a class="header" href="#7-user-flow-bot-commands">7. User Flow: Bot Commands</a></h2>
+<p>The bot handles three commands after the webhook is active:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Command</th><th>Behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/start</code></td><td>Without a token: shows a welcome message. With <code>TRK-</code> token: performs the account linking handshake.</td></tr>
+<tr><td><code>/status</code></td><td>Replies with link status. If linked, shows the username and optionally an inline group invite button.</td></tr>
+<tr><td><code>/help</code></td><td>Lists the available commands.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="8-admin-flow-ban--kick"><a class="header" href="#8-admin-flow-ban--kick">8. Admin Flow: Ban → Kick</a></h2>
+<p>When a staff member bans a user via the <code>BanController</code>, the following happens automatically if the user has a linked Telegram account:</p>
+<ol>
+<li><code>TelegramService::kickUser()</code> is called with the user’s <code>telegram_chat_id</code>.</li>
+<li>The service calls the Telegram API <code>banChatMember</code> (with <code>revoke_messages: true</code>).</li>
+<li>Immediately after a successful ban, it calls <code>unbanChatMember</code> (with <code>only_if_banned: true</code>).</li>
+<li>This produces a <strong>clean kick</strong>: the user is removed from the group but is not permanently banned and can rejoin via a new invite link.</li>
+<li>Both <code>telegram_chat_id</code> and <code>telegram_token</code> are then cleared to <code>null</code> on the user record.</li>
+</ol>
+<h2 id="9-torrent-notifications"><a class="header" href="#9-torrent-notifications">9. Torrent Notifications</a></h2>
+<p>When a torrent’s moderation status transitions to <code>APPROVED</code>, <code>TorrentObserver</code> dispatches a <code>SendTelegramNotification</code> job:</p>
+<pre><code class="language-php">SendTelegramNotification::dispatch($torrent, $torrent-&gt;user);
+</code></pre>
+<p>The job has the following retry configuration:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td><code>$tries</code></td><td><code>3</code></td></tr>
+<tr><td><code>$backoff</code></td><td><code>[10, 60, 300]</code> seconds</td></tr>
+<tr><td><code>$timeout</code></td><td><code>30</code> seconds</td></tr>
+</tbody>
+</table>
+</div>
+<p>The notification is sent as a <code>sendPhoto</code> API call to the configured group and topic, with an inline keyboard containing Download, IMDb, TMDb, and Trailer buttons. Poster URL is resolved from the linked movie or TV record. Trailer URL supports both a raw YouTube ID and <code>[youtube]ID[/youtube]</code> tags in the torrent description.</p>
+<p>The queue worker processes these jobs. The worker runs in the <code>worker</code> container.</p>
+<h2 id="10-token-management"><a class="header" href="#10-token-management">10. Token Management</a></h2>
+<h3 id="reset-via-ui"><a class="header" href="#reset-via-ui">Reset via UI</a></h3>
+<p>Users can reset their Telegram link from the Notification Settings page. Resetting:</p>
+<ol>
+<li>Clears <code>telegram_chat_id</code> from the user record.</li>
+<li>Generates a new <code>TRK-</code> token.</li>
+<li>If the user was previously linked, sends a “disconnected” message to their Telegram account and kicks them from the group.</li>
+</ol>
+<h3 id="bulk-token-provisioning"><a class="header" href="#bulk-token-provisioning">Bulk token provisioning</a></h3>
+<p>To generate tokens for all users who do not yet have one:</p>
+<pre><code class="language-sh">docker compose exec app php artisan telegram:generate-tokens
+</code></pre>
+<p>Add <code>--force</code> to skip the confirmation prompt:</p>
+<pre><code class="language-sh">docker compose exec app php artisan telegram:generate-tokens --force
+</code></pre>
+<h2 id="11-docker-notes"><a class="header" href="#11-docker-notes">11. Docker Notes</a></h2>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>After any code change to jobs, services, or controllers related to Telegram, restart the queue worker so it picks up the updated class definitions:</p>
+</blockquote>
+<pre><code class="language-sh">docker compose restart worker
+</code></pre>
+<p>Failure to restart the worker means the running process continues to execute the old code from memory.</p>
+<h2 id="12-troubleshooting"><a class="header" href="#12-troubleshooting">12. Troubleshooting</a></h2>
+<h3 id="webhook-returns-500"><a class="header" href="#webhook-returns-500">Webhook returns 500</a></h3>
+<p>The webhook route excludes authentication middleware deliberately. If you receive 500 errors, check that no upstream middleware (e.g., a reverse proxy WAF rule) is rejecting the request before it reaches Laravel. Verify with:</p>
+<pre><code class="language-sh">docker compose logs worker | tail -20
+</code></pre>
+<h3 id="bot-commands-return-no-response"><a class="header" href="#bot-commands-return-no-response">Bot commands return no response</a></h3>
+<p>Check that the bot token and chat ID are loaded correctly:</p>
+<pre><code class="language-sh">docker compose exec app php artisan route:list | grep telegram
+</code></pre>
+<p>Confirm the route exists, then verify the <code>.env</code> values are not empty:</p>
+<pre><code class="language-sh">docker compose exec app php artisan tinker --execute="dd(config('services.telegram'));"
+</code></pre>
+<h3 id="notifications-are-silent-no-telegram-message-on-approval"><a class="header" href="#notifications-are-silent-no-telegram-message-on-approval">Notifications are silent (no Telegram message on approval)</a></h3>
+<ol>
+<li>Confirm the queue worker is running: <code>docker compose ps worker</code>.</li>
+<li>Check for failed jobs: <code>docker compose exec app php artisan queue:failed</code>.</li>
+<li>Confirm <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_GROUP_ID</code> are set and non-empty.</li>
+<li>Check application logs: <code>docker compose logs app | grep -i telegram</code>.</li>
+</ol>
+<h3 id="token-already-used--not-found"><a class="header" href="#token-already-used--not-found">Token already used / not found</a></h3>
+<p>Each <code>TRK-</code> token is single-use and is cleared on successful linking. If a user sees “token not found”, they must reset their token from the Notification Settings page to generate a new one.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="google-drive-backup-sync"><a class="header" href="#google-drive-backup-sync">Google Drive Backup Sync</a></h1>
+<p>This page covers the rclone-based layer that uploads local UNIT3D snapshots to Google Drive with transparent encryption. It complements the built-in Laravel backup tool described in <a href="#backups">Backups</a>, which creates the local snapshots that this sync layer uploads to the cloud.</p>
+<h2 id="1-purpose-and-architecture"><a class="header" href="#1-purpose-and-architecture">1. Purpose and architecture</a></h2>
+<p>Local snapshots produced by <code>php artisan backup:run</code> accumulate in <code>backups/</code>. The rclone sync layer picks up that directory and mirrors it to a Google Drive <code>crypt</code> remote (<code>gdrive_crypt:</code>), encrypting file names and contents transparently so raw Google Drive access never exposes backup data.</p>
+<p>The sync runs as an <strong>ephemeral Docker container</strong> defined in <code>rclone_gdrive/docker-compose.yml</code>. The container starts, performs the sync, and is destroyed (<code>--rm</code>). No long-running rclone process is kept alive.</p>
+<pre><code>backups/  (local snapshots, read-only mount)
+    └──► rclone_sync container (ephemeral)
+              └──► gdrive_crypt: remote  (Google Drive, encrypted)
+</code></pre>
+<h2 id="2-prerequisites"><a class="header" href="#2-prerequisites">2. Prerequisites</a></h2>
+<ul>
+<li><strong>Docker</strong> and <strong>Docker Compose</strong> available on the host (the sync runs inside a container — no host-level rclone installation required).</li>
+<li>A <strong>Google Drive OAuth app</strong> configured in rclone (<code>rclone config</code>), producing a remote named <code>gdrive_crypt</code> of type <code>crypt</code> backed by a plain <code>gdrive</code> remote.</li>
+<li>A completed <code>rclone_gdrive/config/rclone.conf</code> file containing the <code>gdrive</code> and <code>gdrive_crypt</code> remote definitions.</li>
+</ul>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><code>rclone_gdrive/config/rclone.conf</code> is git-ignored. You must generate it manually on each host using <code>rclone config</code> and place it at that path before running any sync or restore command.</p>
+</blockquote>
+<h2 id="3-configuration-reference"><a class="header" href="#3-configuration-reference">3. Configuration reference</a></h2>
+<p>File: <code>rclone_gdrive/docker-compose.yml</code></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Value</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>Image</td><td><code>rclone/rclone:latest</code></td><td>Official rclone image</td></tr>
+<tr><td>Source mount</td><td><code>/home/rawserver/UNIT3D_Docker/backups</code> → <code>/data</code> (read-only)</td><td>Local snapshots, never modified</td></tr>
+<tr><td>Config mount</td><td><code>./config</code> → <code>/config/rclone</code></td><td>Provides <code>rclone.conf</code> to the container</td></tr>
+<tr><td>Log mount</td><td><code>./logs</code> → <code>/logs</code></td><td>Persists sync logs on the host</td></tr>
+<tr><td><code>--drive-chunk-size</code></td><td><code>1024M</code></td><td>Large chunks avoid Google Drive upload timeouts on big archives</td></tr>
+<tr><td><code>--transfers</code></td><td><code>4</code></td><td>Parallel file transfers</td></tr>
+<tr><td><code>--checkers</code></td><td><code>8</code></td><td>Parallel file-existence checks</td></tr>
+<tr><td><code>--delete-after</code></td><td><em>(flag)</em></td><td>Deletes destination files only after all transfers complete successfully</td></tr>
+<tr><td><code>-v</code></td><td><em>(flag)</em></td><td>Verbose logging written to <code>--log-file</code></td></tr>
+<tr><td>Log file</td><td><code>/logs/sync_execution.log</code></td><td>Mapped to <code>rclone_gdrive/logs/sync_execution.log</code> on the host</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>sync</code> subcommand is used, meaning the destination mirrors the source exactly (files removed locally will eventually be removed from the cloud after <code>--delete-after</code> processing).</p>
+<h2 id="4-running-a-sync"><a class="header" href="#4-running-a-sync">4. Running a sync</a></h2>
+<p>Use the wrapper script to run a sync:</p>
+<pre><code class="language-sh">cd /home/rawserver/UNIT3D_Docker/rclone_gdrive
+bash scripts/run_sync.sh
+</code></pre>
+<p>The script:</p>
+<ol>
+<li>Changes into the project directory (<code>rclone_gdrive/</code>).</li>
+<li>Appends a timestamped start entry to <code>logs/cron_wrapper.log</code>.</li>
+<li>Runs <code>docker compose run --rm rclone_sync</code> (ephemeral — container is destroyed on exit).</li>
+<li>Appends a success or error entry to <code>logs/cron_wrapper.log</code> based on the exit code.</li>
+<li>Exits with the same exit code as the rclone process.</li>
+</ol>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>The script must be run from a user that has permission to call <code>docker compose</code>. Ensure the user is in the <code>docker</code> group or use <code>sudo</code>.</p>
+</blockquote>
+<h2 id="5-cron-setup"><a class="header" href="#5-cron-setup">5. Cron setup</a></h2>
+<p>Add an entry to the crontab of the user that has Docker access. For example, to sync daily at 07:00:</p>
+<pre><code class="language-sh">crontab -e
+</code></pre>
+<pre><code>0 7 * * * /home/rawserver/UNIT3D_Docker/rclone_gdrive/scripts/run_sync.sh
+</code></pre>
+<p>The wrapper script writes its own timestamped log to <code>rclone_gdrive/logs/cron_wrapper.log</code>, so cron output redirection is optional. Detailed per-file rclone output goes to <code>rclone_gdrive/logs/sync_execution.log</code>.</p>
+<h2 id="6-restore-procedure"><a class="header" href="#6-restore-procedure">6. Restore procedure</a></h2>
+<p>Use the restore script to download and decrypt a specific backup from Google Drive:</p>
+<pre><code class="language-sh">cd /home/rawserver/UNIT3D_Docker/rclone_gdrive
+bash scripts/restore_snapshot.sh
+</code></pre>
+<p>The script runs interactively:</p>
+<ol>
+<li><strong>Lists</strong> all top-level directories in <code>gdrive_crypt:/</code> so you can see what snapshots are available.</li>
+<li><strong>Prompts</strong> for the exact folder name to restore (example: <code>snapshot_2026-03-19_0600</code>).</li>
+<li><strong>Creates</strong> the local destination directory at <code>/home/rawserver/UNIT3D_Docker/restauracion_emergencia/&lt;TARGET&gt;</code>.</li>
+<li><strong>Downloads and decrypts</strong> the snapshot using <code>rclone copy gdrive_crypt:/&lt;TARGET&gt;</code> with <code>--drive-chunk-size 1024M</code>.</li>
+<li><strong>Reports</strong> completion and lists the restored files with sizes.</li>
+</ol>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>The restore destination is <code>/home/rawserver/UNIT3D_Docker/restauracion_emergencia/</code>. Files are decrypted transparently by rclone using the <code>gdrive_crypt</code> remote definition in <code>rclone.conf</code>. After restore, follow the procedures in <a href="#4-restoring-a-backup">Backups — Restoring a backup</a> to apply the snapshot to the running application.</p>
+</blockquote>
+<h2 id="7-logs"><a class="header" href="#7-logs">7. Logs</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>File</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>rclone_gdrive/logs/cron_wrapper.log</code></td><td>Timestamped start/success/error lines written by <code>run_sync.sh</code></td></tr>
+<tr><td><code>rclone_gdrive/logs/sync_execution.log</code></td><td>Verbose per-file rclone output written by the container (<code>-v --log-file</code>)</td></tr>
+</tbody>
+</table>
+</div>
+<p>To follow a running sync in real time:</p>
+<pre><code class="language-sh">tail -f /home/rawserver/UNIT3D_Docker/rclone_gdrive/logs/sync_execution.log
+</code></pre>
+<p>To review the cron history:</p>
+<pre><code class="language-sh">cat /home/rawserver/UNIT3D_Docker/rclone_gdrive/logs/cron_wrapper.log
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="server-management"><a class="header" href="#server-management">Server management</a></h1>
 <!-- cspell:ignore certbot,chgrp,usermod -->

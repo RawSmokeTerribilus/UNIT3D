@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Meilisearch Setup - UNIT3D Documentation</title>
+        <title>Telegram Integration - UNIT3D Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -174,123 +174,193 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="meilisearch-setup-for-unit3d"><a class="header" href="#meilisearch-setup-for-unit3d">Meilisearch setup for UNIT3D</a></h1>
-<p><strong>Note:</strong> This guide assumes you are using a <code>sudo</code> user named <code>ubuntu</code>.</p>
-<h2 id="1-install-and-configure-meilisearch"><a class="header" href="#1-install-and-configure-meilisearch">1. Install and configure Meilisearch</a></h2>
-<ol>
-<li>
-<p><strong>Install Meilisearch:</strong></p>
-<pre><code class="language-sh">sudo curl -L https://install.meilisearch.com | sudo sh
-sudo mv ./meilisearch /usr/local/bin/
-sudo chmod +x /usr/local/bin/meilisearch
-</code></pre>
-</li>
-<li>
-<p><strong>Set up directories:</strong></p>
-<pre><code class="language-sh">sudo mkdir -p /var/lib/meilisearch/data /var/lib/meilisearch/dumps /var/lib/meilisearch/snapshots
-sudo chown -R ubuntu:ubuntu /var/lib/meilisearch
-sudo chmod -R 750 /var/lib/meilisearch
-</code></pre>
-</li>
-<li>
-<p><strong>Generate and record a master key:</strong></p>
-<p>Generate a 16-byte master key:</p>
-<pre><code class="language-sh">openssl rand -hex 16
-</code></pre>
-<p>Record this key, as it will be used in the configuration file.</p>
-</li>
-<li>
-<p><strong>Configure Meilisearch:</strong></p>
-<pre><code class="language-sh">sudo curl https://raw.githubusercontent.com/meilisearch/meilisearch/latest/config.toml -o /etc/meilisearch.toml
-sudo nano /etc/meilisearch.toml
-</code></pre>
-<p>Update the following in <code>/etc/meilisearch.toml</code>:</p>
-<pre><code class="language-toml">env = "production"
-master_key = "your_16_byte_master_key"
-db_path = "/var/lib/meilisearch/data"
-dump_dir = "/var/lib/meilisearch/dumps"
-snapshot_dir = "/var/lib/meilisearch/snapshots"
-</code></pre>
-</li>
-<li>
-<p><strong>Create and enable service:</strong></p>
-<pre><code class="language-sh">sudo nano /etc/systemd/system/meilisearch.service
-</code></pre>
-<p>Add the following:</p>
-<pre><code class="language-ini">[Unit]
-Description=Meilisearch
-After=systemd-user-sessions.service
-
-[Service]
-Type=simple
-WorkingDirectory=/var/lib/meilisearch
-ExecStart=/usr/local/bin/meilisearch --config-file-path /etc/meilisearch.toml
-User=ubuntu
-Group=ubuntu
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-</code></pre>
-<p>Enable and start the service:</p>
-<pre><code class="language-sh">sudo systemctl enable meilisearch
-sudo systemctl start meilisearch
-sudo systemctl status meilisearch
-</code></pre>
-</li>
-</ol>
-<h2 id="2-configure-unit3d-for-meilisearch"><a class="header" href="#2-configure-unit3d-for-meilisearch">2. Configure UNIT3D for Meilisearch</a></h2>
-<ol>
-<li>
-<p><strong>Update <code>.env</code>:</strong></p>
-<pre><code class="language-sh">sudo nano /var/www/html/.env
-</code></pre>
-<p>Add the following:</p>
-<pre><code class="language-env">SCOUT_DRIVER=meilisearch
-MEILISEARCH_HOST=http://127.0.0.1:7700
-MEILISEARCH_KEY=your_16_byte_master_key
-</code></pre>
-</li>
-<li>
-<p><strong>Clear configuration and restart services:</strong></p>
-<pre><code class="language-sh">sudo php artisan set:all_cache
-sudo systemctl restart php8.3-fpm
-sudo php artisan queue:restart
-</code></pre>
-</li>
-</ol>
-<h2 id="3-maintenance"><a class="header" href="#3-maintenance">3. Maintenance</a></h2>
-<ol>
-<li>
-<p><strong>Reload data and sync indexes:</strong></p>
+                        <h1 id="telegram-integration"><a class="header" href="#telegram-integration">Telegram Integration</a></h1>
+<p>This page documents the full Telegram bot integration for UNIT3D trackers: deep-link account linking, queued torrent notifications, automatic kick on ban, and group invite flow.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>The webhook endpoint requires an HTTPS domain. Telegram does not deliver webhooks to plain HTTP URLs.</p>
+</blockquote>
+<h2 id="1-prerequisites"><a class="header" href="#1-prerequisites">1. Prerequisites</a></h2>
 <ul>
-<li>
-<p><strong>Sync index settings:</strong></p>
-<p>After UNIT3D updates, sync the index settings to ensure they are up to date:</p>
-<pre><code class="language-sh">sudo php artisan scout:sync-index-settings
-</code></pre>
-</li>
-<li>
-<p><strong>Reload data:</strong></p>
-<p>Whenever Meilisearch is upgraded or during the initial setup, the database must be reloaded:</p>
-<pre><code class="language-sh">sudo php artisan auto:sync_torrents_to_meilisearch --wipe &amp;&amp; sudo php artisan auto:sync_people_to_meilisearch
-</code></pre>
-</li>
+<li>A Telegram bot created via <a href="https://t.me/BotFather">@BotFather</a>.</li>
+<li>A Telegram <strong>supergroup</strong> (not a regular group) with the bot added as an administrator. The bot must have <strong>Ban users</strong> and <strong>Invite users via link</strong> permissions.</li>
+<li>Your UNIT3D instance must be accessible over HTTPS.</li>
+<li>Redis must be configured as the Laravel queue backend (the notification job is queued, not synchronous).</li>
 </ul>
-</li>
+<h2 id="2-environment-variables"><a class="header" href="#2-environment-variables">2. Environment Variables</a></h2>
+<p>Add the following variables to your <code>.env</code> file:</p>
+<pre><code class="language-env">TELEGRAM_BOT_TOKEN=123456789:ABCDefGHIjklMNOpqrsTuvWXyz_1234567890
+TELEGRAM_BOT_USERNAME=your_bot_username
+TELEGRAM_GROUP_ID=-100XXXXXXXXXX
+TELEGRAM_TOPIC_NOVEDADES=6
+TELEGRAM_GROUP_INVITE_LINK=https://t.me/+XXXXXXXXXXXXXX
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>How to obtain</th></tr>
+</thead>
+<tbody>
+<tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td><a href="https://t.me/BotFather">@BotFather</a> → <code>/newbot</code> or <code>/token</code></td></tr>
+<tr><td><code>TELEGRAM_BOT_USERNAME</code></td><td>The bot’s <code>@username</code> without the <code>@</code></td></tr>
+<tr><td><code>TELEGRAM_GROUP_ID</code></td><td>Add <a href="https://t.me/raw_data_bot">@raw_data_bot</a> to your group, send any message; the chat ID is shown (starts with <code>-100</code>)</td></tr>
+<tr><td><code>TELEGRAM_TOPIC_NOVEDADES</code></td><td>In a forum-enabled supergroup, right-click the announcements topic → Copy Link → the number after the last <code>/</code></td></tr>
+<tr><td><code>TELEGRAM_GROUP_INVITE_LINK</code></td><td>Generate via API: <code>curl "https://api.telegram.org/bot&lt;TOKEN&gt;/createChatInviteLink" -d "chat_id=&lt;GROUP_ID&gt;"</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="3-configuration"><a class="header" href="#3-configuration">3. Configuration</a></h2>
+<p>The <code>config/services.php</code> file maps these variables to the <code>telegram</code> service key:</p>
+<pre><code class="language-php">'telegram' =&gt; [
+    'token'             =&gt; env('TELEGRAM_BOT_TOKEN'),
+    'chat_id'           =&gt; env('TELEGRAM_GROUP_ID'),
+    'topic_id'          =&gt; env('TELEGRAM_TOPIC_NOVEDADES'),
+    'bot_username'      =&gt; env('TELEGRAM_BOT_USERNAME'),
+    'group_invite_link' =&gt; env('TELEGRAM_GROUP_INVITE_LINK'),
+],
+</code></pre>
+<p>All application code reads these values via <code>config('services.telegram.*')</code>.</p>
+<h2 id="4-database-migration"><a class="header" href="#4-database-migration">4. Database Migration</a></h2>
+<p>Run the migration to add the required columns to the <code>users</code> table:</p>
+<pre><code class="language-sh">php artisan migrate
+</code></pre>
+<p>This adds:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Column</th><th>Type</th><th>Constraints</th></tr>
+</thead>
+<tbody>
+<tr><td><code>telegram_chat_id</code></td><td><code>BIGINT</code></td><td>nullable, unique</td></tr>
+<tr><td><code>telegram_token</code></td><td><code>VARCHAR(64)</code></td><td>nullable, unique</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="5-webhook-setup"><a class="header" href="#5-webhook-setup">5. Webhook Setup</a></h2>
+<p>Register the webhook with Telegram so updates are delivered to your application:</p>
+<pre><code class="language-sh">curl -X POST "https://api.telegram.org/bot&lt;YOUR_BOT_TOKEN&gt;/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://your-domain.tld/api/telegram/webhook"}'
+</code></pre>
+<p>Verify the webhook is active:</p>
+<pre><code class="language-sh">curl "https://api.telegram.org/bot&lt;YOUR_BOT_TOKEN&gt;/getWebhookInfo"
+</code></pre>
+<p>The response should show <code>"url"</code> set to your endpoint and <code>"pending_update_count": 0</code>.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>The webhook route at <code>POST /api/telegram/webhook</code> intentionally excludes the <code>throttle:api</code>, <code>auth:api</code>, and <code>banned</code> middleware. Telegram’s servers must be able to reach it without authentication.</p>
+</blockquote>
+<h2 id="6-user-flow-linking-an-account"><a class="header" href="#6-user-flow-linking-an-account">6. User Flow: Linking an Account</a></h2>
+<p>Linking works via a deep-link handshake using a <code>TRK-</code> prefixed token:</p>
+<ol>
+<li>The user navigates to <strong>Notification Settings</strong> in the tracker UI.</li>
+<li>A unique token of the form <code>TRK-</code> + 32 random alphanumeric characters (36 characters total) is displayed alongside a <strong>Link with Bot</strong> button.</li>
+<li>Clicking the button opens a <code>t.me/&lt;bot_username&gt;?start=TRK-xxxxx</code> deep link in Telegram.</li>
+<li>The bot receives a <code>/start TRK-xxxxx</code> message.</li>
+<li>The webhook controller looks up the token in the database using a pessimistic lock (<code>lockForUpdate()</code>) inside a transaction to prevent race conditions.</li>
+<li>On success, <code>telegram_chat_id</code> is set to the user’s Telegram chat ID, and <code>telegram_token</code> is cleared to <code>null</code> (one-time use).</li>
+<li>The bot sends a confirmation message. If <code>TELEGRAM_GROUP_INVITE_LINK</code> is configured, an inline keyboard button to join the group is included.</li>
 </ol>
-<h2 id="see-also"><a class="header" href="#see-also">See also</a></h2>
-<p>For further details, refer to the <a href="https://www.meilisearch.com/docs/guides/deployment/running_production">official Meilisearch documentation</a>.</p>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>Each token is single-use. Once linked, the token is cleared. Users must reset their token to re-link.</p>
+</blockquote>
+<h2 id="7-user-flow-bot-commands"><a class="header" href="#7-user-flow-bot-commands">7. User Flow: Bot Commands</a></h2>
+<p>The bot handles three commands after the webhook is active:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Command</th><th>Behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/start</code></td><td>Without a token: shows a welcome message. With <code>TRK-</code> token: performs the account linking handshake.</td></tr>
+<tr><td><code>/status</code></td><td>Replies with link status. If linked, shows the username and optionally an inline group invite button.</td></tr>
+<tr><td><code>/help</code></td><td>Lists the available commands.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="8-admin-flow-ban--kick"><a class="header" href="#8-admin-flow-ban--kick">8. Admin Flow: Ban → Kick</a></h2>
+<p>When a staff member bans a user via the <code>BanController</code>, the following happens automatically if the user has a linked Telegram account:</p>
+<ol>
+<li><code>TelegramService::kickUser()</code> is called with the user’s <code>telegram_chat_id</code>.</li>
+<li>The service calls the Telegram API <code>banChatMember</code> (with <code>revoke_messages: true</code>).</li>
+<li>Immediately after a successful ban, it calls <code>unbanChatMember</code> (with <code>only_if_banned: true</code>).</li>
+<li>This produces a <strong>clean kick</strong>: the user is removed from the group but is not permanently banned and can rejoin via a new invite link.</li>
+<li>Both <code>telegram_chat_id</code> and <code>telegram_token</code> are then cleared to <code>null</code> on the user record.</li>
+</ol>
+<h2 id="9-torrent-notifications"><a class="header" href="#9-torrent-notifications">9. Torrent Notifications</a></h2>
+<p>When a torrent’s moderation status transitions to <code>APPROVED</code>, <code>TorrentObserver</code> dispatches a <code>SendTelegramNotification</code> job:</p>
+<pre><code class="language-php">SendTelegramNotification::dispatch($torrent, $torrent-&gt;user);
+</code></pre>
+<p>The job has the following retry configuration:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td><code>$tries</code></td><td><code>3</code></td></tr>
+<tr><td><code>$backoff</code></td><td><code>[10, 60, 300]</code> seconds</td></tr>
+<tr><td><code>$timeout</code></td><td><code>30</code> seconds</td></tr>
+</tbody>
+</table>
+</div>
+<p>The notification is sent as a <code>sendPhoto</code> API call to the configured group and topic, with an inline keyboard containing Download, IMDb, TMDb, and Trailer buttons. Poster URL is resolved from the linked movie or TV record. Trailer URL supports both a raw YouTube ID and <code>[youtube]ID[/youtube]</code> tags in the torrent description.</p>
+<p>The queue worker processes these jobs. The worker runs in the <code>worker</code> container.</p>
+<h2 id="10-token-management"><a class="header" href="#10-token-management">10. Token Management</a></h2>
+<h3 id="reset-via-ui"><a class="header" href="#reset-via-ui">Reset via UI</a></h3>
+<p>Users can reset their Telegram link from the Notification Settings page. Resetting:</p>
+<ol>
+<li>Clears <code>telegram_chat_id</code> from the user record.</li>
+<li>Generates a new <code>TRK-</code> token.</li>
+<li>If the user was previously linked, sends a “disconnected” message to their Telegram account and kicks them from the group.</li>
+</ol>
+<h3 id="bulk-token-provisioning"><a class="header" href="#bulk-token-provisioning">Bulk token provisioning</a></h3>
+<p>To generate tokens for all users who do not yet have one:</p>
+<pre><code class="language-sh">docker compose exec app php artisan telegram:generate-tokens
+</code></pre>
+<p>Add <code>--force</code> to skip the confirmation prompt:</p>
+<pre><code class="language-sh">docker compose exec app php artisan telegram:generate-tokens --force
+</code></pre>
+<h2 id="11-docker-notes"><a class="header" href="#11-docker-notes">11. Docker Notes</a></h2>
+<blockquote class="blockquote-tag blockquote-tag-important">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>After any code change to jobs, services, or controllers related to Telegram, restart the queue worker so it picks up the updated class definitions:</p>
+</blockquote>
+<pre><code class="language-sh">docker compose restart worker
+</code></pre>
+<p>Failure to restart the worker means the running process continues to execute the old code from memory.</p>
+<h2 id="12-troubleshooting"><a class="header" href="#12-troubleshooting">12. Troubleshooting</a></h2>
+<h3 id="webhook-returns-500"><a class="header" href="#webhook-returns-500">Webhook returns 500</a></h3>
+<p>The webhook route excludes authentication middleware deliberately. If you receive 500 errors, check that no upstream middleware (e.g., a reverse proxy WAF rule) is rejecting the request before it reaches Laravel. Verify with:</p>
+<pre><code class="language-sh">docker compose logs worker | tail -20
+</code></pre>
+<h3 id="bot-commands-return-no-response"><a class="header" href="#bot-commands-return-no-response">Bot commands return no response</a></h3>
+<p>Check that the bot token and chat ID are loaded correctly:</p>
+<pre><code class="language-sh">docker compose exec app php artisan route:list | grep telegram
+</code></pre>
+<p>Confirm the route exists, then verify the <code>.env</code> values are not empty:</p>
+<pre><code class="language-sh">docker compose exec app php artisan tinker --execute="dd(config('services.telegram'));"
+</code></pre>
+<h3 id="notifications-are-silent-no-telegram-message-on-approval"><a class="header" href="#notifications-are-silent-no-telegram-message-on-approval">Notifications are silent (no Telegram message on approval)</a></h3>
+<ol>
+<li>Confirm the queue worker is running: <code>docker compose ps worker</code>.</li>
+<li>Check for failed jobs: <code>docker compose exec app php artisan queue:failed</code>.</li>
+<li>Confirm <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_GROUP_ID</code> are set and non-empty.</li>
+<li>Check application logs: <code>docker compose logs app | grep -i telegram</code>.</li>
+</ol>
+<h3 id="token-already-used--not-found"><a class="header" href="#token-already-used--not-found">Token already used / not found</a></h3>
+<p>Each <code>TRK-</code> token is single-use and is cleared on successful linking. If a user sees “token not found”, they must reset their token from the Notification Settings page to generate a new one.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="manual.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="meilisearch_setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="telegram_integration.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="gdrive_backup_sync.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -300,11 +370,11 @@ sudo php artisan queue:restart
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="manual.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="meilisearch_setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="telegram_integration.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="gdrive_backup_sync.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-155df213.js";
+            window.path_to_searchindex_js = "searchindex-c3208e56.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-bff7e473.js"></script>
+        <script src="toc-82aefe5b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -383,6 +383,8 @@ sudo php artisan queue:restart
 </code></pre>
 </li>
 </ol>
+<h2 id="6-cloud-backup-sync-google-drive"><a class="header" href="#6-cloud-backup-sync-google-drive">6. Cloud Backup Sync (Google Drive)</a></h2>
+<p>The local backup system described above stores snapshots on the host filesystem. An optional rclone layer complements this by syncing those snapshots to an encrypted Google Drive remote (<code>gdrive_crypt:</code>), providing an off-site cold-backup tier. Syncs run via an ephemeral Docker container defined in <code>rclone_gdrive/docker-compose.yml</code> and can be automated with a cron job. For full setup and restore instructions, see <a href="gdrive_backup_sync.html">Google Drive Backup Sync</a>.</p>
 
                     </main>
 
