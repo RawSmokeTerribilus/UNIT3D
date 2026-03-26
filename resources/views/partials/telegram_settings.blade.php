@@ -266,9 +266,17 @@
                         class="tg-btn-link"
                         target="_blank"
                         rel="noopener"
+                        onclick="tgStartLinkPolling()"
                     >
                         🚀 VINCULAR CON EL BOT
                     </a>
+                </div>
+
+                <div id="tg-polling-status" style="display:none; margin-bottom: 12px;">
+                    <div class="tg-status-line">
+                        <span class="tg-status-icon" style="animation: neonPulse 1s ease-in-out infinite;">⏳</span>
+                        <span class="tg-status-label" style="color: #00e5ff; text-shadow: 0 0 4px rgba(0, 229, 255, 0.3);">Esperando vinculación con Telegram...</span>
+                    </div>
                 </div>
 
                 <div class="tg-hint">
@@ -359,5 +367,31 @@ function tgCopyToken() {
         btn.textContent = '✅ Copiado';
         setTimeout(function() { btn.textContent = '📋 Copiar'; }, 2000);
     });
+}
+
+function tgStartLinkPolling() {
+    const statusEl = document.getElementById('tg-polling-status');
+    if (statusEl) statusEl.style.display = 'block';
+
+    let attempts = 0;
+    const maxAttempts = 20; // 20 × 3s = 60 seconds
+    const interval = setInterval(function() {
+        attempts++;
+        fetch('{{ route('users.telegram.check_link', ['user' => $user]) }}', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.linked) {
+                clearInterval(interval);
+                location.reload();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                if (statusEl) statusEl.innerHTML = '<div class="tg-hint">Tiempo de espera agotado. Refresca la página manualmente tras vincular.</div>';
+            }
+        })
+        .catch(() => { /* silently retry */ });
+    }, 3000);
 }
 </script>

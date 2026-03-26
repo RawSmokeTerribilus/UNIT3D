@@ -578,6 +578,7 @@ Route::middleware('language')->group(function (): void {
             // Telegram
             Route::prefix('telegram')->name('telegram.')->group(function (): void {
                 Route::post('/reset-token', [App\Http\Controllers\User\TelegramController::class, 'resetToken'])->name('reset');
+                Route::get('/check-link', [App\Http\Controllers\User\TelegramController::class, 'checkLink'])->name('check_link');
             });
 
             // Apikey

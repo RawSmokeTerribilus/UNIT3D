@@ -45,4 +45,11 @@ class TelegramController extends Controller
             ->back()
             ->with('success', 'Telegram desvinculado y token regenerado correctamente.');
     }
+
+    public function checkLink(Request $request)
+    {
+        return response()->json([
+            'linked' => $request->user()->telegram_chat_id !== null,
+        ]);
+    }
 }
