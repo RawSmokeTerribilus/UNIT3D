@@ -231,7 +231,7 @@
                     <button
                         type="submit"
                         class="tg-btn-danger"
-                        onclick="return confirm('⚠️ ¿Regenerar token?\n\nPerderás la vinculación actual y tendrás que vincular tu cuenta de nuevo con el bot.')"
+                        id="tg-reset-linked-btn"
                     >
                         <span>🔄</span> Regenerar Token (Desvincular)
                     </button>
@@ -262,11 +262,11 @@
             @if (Auth::user()->telegram_token)
                 <div class="tg-actions" style="margin-bottom: 14px;">
                     <a
+                        id="tg-link-btn"
                         href="https://t.me/{{ config('services.telegram.bot_username') }}?start={{ Auth::user()->telegram_token }}"
                         class="tg-btn-link"
                         target="_blank"
                         rel="noopener"
-                        onclick="tgStartLinkPolling()"
                     >
                         🚀 VINCULAR CON EL BOT
                     </a>
@@ -301,7 +301,6 @@
                                 type="button"
                                 class="tg-btn-copy"
                                 id="tg-copy-btn"
-                                onclick="tgCopyToken()"
                             >
                                 📋 Copiar
                             </button>
@@ -318,7 +317,7 @@
                         <button
                             type="submit"
                             class="tg-btn-danger"
-                            onclick="return confirm('⚠️ ¿Regenerar token?\n\nSi ya iniciaste la vinculación, tendrás que empezar de nuevo.')"
+                            id="tg-reset-pending-btn"
                         >
                             <span>🔄</span> Regenerar Token
                         </button>
@@ -348,50 +347,87 @@
     </div>
 </div>
 
-<script>
-function tgCopyToken() {
-    const input = document.getElementById('tg-token-input');
-    const btn = document.getElementById('tg-copy-btn');
-    if (!input) return;
+<script nonce="{{ HDVinnie\SecureHeaders\SecureHeaders::nonce('script') }}">
+(function() {
+    // Copy token button
+    var copyBtn = document.getElementById('tg-copy-btn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            var input = document.getElementById('tg-token-input');
+            if (!input) return;
+            navigator.clipboard.writeText(input.value).then(function() {
+                copyBtn.textContent = '✅ Copiado';
+                copyBtn.classList.add('tg-copied');
+                setTimeout(function() { copyBtn.textContent = '📋 Copiar'; copyBtn.classList.remove('tg-copied'); }, 2000);
+            }).catch(function() {
+                input.select();
+                document.execCommand('copy');
+                copyBtn.textContent = '✅ Copiado';
+                setTimeout(function() { copyBtn.textContent = '📋 Copiar'; }, 2000);
+            });
+        });
+    }
 
-    navigator.clipboard.writeText(input.value).then(function() {
-        btn.textContent = '✅ Copiado';
-        btn.classList.add('tg-copied');
-        setTimeout(function() {
-            btn.textContent = '📋 Copiar';
-            btn.classList.remove('tg-copied');
-        }, 2000);
-    }).catch(function() {
-        input.select();
-        document.execCommand('copy');
-        btn.textContent = '✅ Copiado';
-        setTimeout(function() { btn.textContent = '📋 Copiar'; }, 2000);
-    });
-}
-
-function tgStartLinkPolling() {
-    const statusEl = document.getElementById('tg-polling-status');
-    if (statusEl) statusEl.style.display = 'block';
-
-    let attempts = 0;
-    const maxAttempts = 20; // 20 × 3s = 60 seconds
-    const interval = setInterval(function() {
-        attempts++;
-        fetch('{{ route('users.telegram.check_link', ['user' => $user]) }}', {
-            credentials: 'same-origin',
-            headers: { 'Accept': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.linked) {
-                clearInterval(interval);
-                location.reload();
-            } else if (attempts >= maxAttempts) {
-                clearInterval(interval);
-                if (statusEl) statusEl.innerHTML = '<div class="tg-hint">Tiempo de espera agotado. Refresca la página manualmente tras vincular.</div>';
+    // Confirm dialogs for regenerate buttons
+    var resetLinked = document.getElementById('tg-reset-linked-btn');
+    if (resetLinked) {
+        resetLinked.addEventListener('click', function(e) {
+            if (!confirm('⚠️ ¿Regenerar token?\n\nPerderás la vinculación actual y tendrás que vincular tu cuenta de nuevo con el bot.')) {
+                e.preventDefault();
             }
-        })
-        .catch(() => { /* silently retry */ });
-    }, 3000);
-}
+        });
+    }
+
+    var resetPending = document.getElementById('tg-reset-pending-btn');
+    if (resetPending) {
+        resetPending.addEventListener('click', function(e) {
+            if (!confirm('⚠️ ¿Regenerar token?\n\nSi ya iniciaste la vinculación, tendrás que empezar de nuevo.')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Polling for link status after clicking VINCULAR CON EL BOT
+    var linkBtn = document.getElementById('tg-link-btn');
+    if (linkBtn) {
+        linkBtn.addEventListener('click', function() {
+            var statusEl = document.getElementById('tg-polling-status');
+            if (statusEl) statusEl.style.display = 'block';
+            console.log('[TG] Polling started');
+
+            var attempts = 0;
+            var maxAttempts = 20;
+            var checkUrl = '{{ route('users.telegram.check_link', ['user' => $user]) }}';
+            console.log('[TG] Check URL:', checkUrl);
+
+            var interval = setInterval(function() {
+                attempts++;
+                console.log('[TG] Poll attempt', attempts);
+                fetch(checkUrl, {
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function(r) {
+                    console.log('[TG] Response status:', r.status);
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function(data) {
+                    console.log('[TG] Data:', data);
+                    if (data.linked) {
+                        clearInterval(interval);
+                        console.log('[TG] Linked! Reloading...');
+                        location.reload();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        if (statusEl) statusEl.innerHTML = '<div class="tg-hint">Tiempo de espera agotado. Refresca la página manualmente tras vincular.</div>';
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[TG] Fetch error:', err);
+                });
+            }, 3000);
+        });
+    }
+})();
 </script>
