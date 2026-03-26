@@ -9,7 +9,7 @@
             <p style="margin: 0 0 15px 0; color: #155724; font-size: 0.9em;">
                 {{ __('user.telegram-info') ?? 'Your account is connected to our Telegram bot.' }}
             </p>
-            <form method="POST" action="{{ route('users.telegram.reset_token', ['user' => $user->username]) }}" style="display: inline;">
+            <form method="POST" action="{{ route('users.telegram.reset', ['user' => $user->username]) }}" style="display: inline;">
                 @csrf
                 <button type="submit" 
                         class="form__button form__button--outline" 
@@ -45,7 +45,7 @@
                             {{ __('user.telegram-link-button') ?? 'Link with Telegram' }}
                         </a>
                         
-                        <form method="POST" action="{{ route('users.telegram.reset_token', ['user' => $user->username]) }}" style="display: inline;">
+                        <form method="POST" action="{{ route('users.telegram.reset', ['user' => $user->username]) }}" style="display: inline;">
                             @csrf
                             <button type="submit" 
                                     class="form__button form__button--outline" 
