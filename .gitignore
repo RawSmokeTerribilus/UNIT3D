@@ -30,9 +30,14 @@ ASSETS_REQUIRED.txt
 _config.yml
 *.sql
 Initial_NOBS_art/
-backup.sh
 
-# System & Temp (Pulicionado)
+# Backup files
+*.bkp
+
+# Published vendor assets
+/public/vendor/
+
+# System & Temp
 .DS_Store
 Thumbs.db
 .idea
@@ -49,3 +54,9 @@ storage/backups/*
 rclone_gdrive/config/
 rclone_gdrive/logs/
 rclone_gdrive/info-bkp.txt
+public/vendor/
+.docker/
+vendor/
+
+# Telegram implementation docs (contains sensitive data)
+TELEGRAM_IMPLEMENTATION_SUMMARY.md

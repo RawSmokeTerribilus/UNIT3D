@@ -417,4 +417,6 @@
             </form>
         </div>
     </section>
+
+    @include('partials.telegram_settings')
 @endsection
