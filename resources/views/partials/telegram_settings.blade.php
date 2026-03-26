@@ -238,39 +238,29 @@
                 </form>
             </div>
         @else
+            @php
+                $justRegenerated = session('success') && str_contains(session('success'), 'desvinculado');
+            @endphp
+
             <div class="tg-status-line">
-                <span class="tg-status-icon">⚡</span>
-                <span class="tg-status-label">PENDIENTE — Vinculación Requerida</span>
+                @if ($justRegenerated)
+                    <span class="tg-status-icon">🔄</span>
+                    <span class="tg-status-label" style="color: #ffaa00; text-shadow: 0 0 4px rgba(255, 170, 0, 0.3);">TOKEN REGENERADO — Vinculación Eliminada</span>
+                @else
+                    <span class="tg-status-icon">⚡</span>
+                    <span class="tg-status-label">PENDIENTE — Vinculación Requerida</span>
+                @endif
             </div>
             <div class="tg-status-text" style="margin-bottom: 14px;">
-                Vincula tu cuenta con el bot de Telegram para recibir notificaciones de nuevos torrents.
+                @if ($justRegenerated)
+                    Tu vinculación anterior ha sido eliminada. Para volver a recibir notificaciones, pulsa el botón verde y el bot te volverá a vincular automáticamente.
+                @else
+                    Vincula tu cuenta con el bot de Telegram para recibir notificaciones de nuevos torrents.
+                @endif
             </div>
 
             @if (Auth::user()->telegram_token)
-                {{-- Token row with copy button --}}
-                <div class="tg-token-row">
-                    <input
-                        id="tg-token-input"
-                        class="form__text tg-token-field"
-                        type="text"
-                        value="{{ Auth::user()->telegram_token }}"
-                        readonly
-                    />
-                    <button
-                        type="button"
-                        class="tg-btn-copy"
-                        id="tg-copy-btn"
-                        onclick="tgCopyToken()"
-                    >
-                        📋 Copiar
-                    </button>
-                </div>
-
-                <div class="tg-hint">
-                    Paso 1: Copia el token. Paso 2: Pulsa el botón de vincular. El bot hará el resto.
-                </div>
-
-                <div class="tg-actions">
+                <div class="tg-actions" style="margin-bottom: 14px;">
                     <a
                         href="https://t.me/{{ config('services.telegram.bot_username') }}?start={{ Auth::user()->telegram_token }}"
                         class="tg-btn-link"
@@ -279,6 +269,42 @@
                     >
                         🚀 VINCULAR CON EL BOT
                     </a>
+                </div>
+
+                <div class="tg-hint">
+                    Pulsa el botón verde — se abrirá Telegram y la vinculación será automática. No necesitas copiar nada.
+                </div>
+
+                {{-- Token display as collapsible fallback --}}
+                <details style="margin-top: 12px;">
+                    <summary style="color: rgba(255, 255, 255, 0.4); font-size: 0.82rem; cursor: pointer; user-select: none;">
+                        ⚙️ Token manual (solo si el botón no funciona)
+                    </summary>
+                    <div style="margin-top: 8px;">
+                        <div class="tg-token-row">
+                            <input
+                                id="tg-token-input"
+                                class="form__text tg-token-field"
+                                type="text"
+                                value="{{ Auth::user()->telegram_token }}"
+                                readonly
+                            />
+                            <button
+                                type="button"
+                                class="tg-btn-copy"
+                                id="tg-copy-btn"
+                                onclick="tgCopyToken()"
+                            >
+                                📋 Copiar
+                            </button>
+                        </div>
+                        <div class="tg-hint">
+                            Copia el token, abre el bot <a href="https://t.me/{{ config('services.telegram.bot_username') }}" target="_blank" rel="noopener" style="color: #00e5ff;">@{{ config('services.telegram.bot_username') }}</a> y envía: <code>/start {{ Auth::user()->telegram_token }}</code>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="tg-actions" style="margin-top: 14px;">
                     <form method="POST" action="{{ route('users.telegram.reset', ['user' => $user]) }}" style="display: inline;">
                         @csrf
                         <button
