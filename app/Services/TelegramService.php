@@ -73,6 +73,7 @@ class TelegramService
     /**
      * FASE 2: LA GUILLOTINA
      * Expulsa al usuario del grupo de Telegram.
+     * Ban + Unban inmediato = kick limpio (el usuario puede volver a unirse después).
      */
     public function kickUser(string $telegramChatId): bool
     {
@@ -85,6 +86,15 @@ class TelegramService
                 'user_id' => $telegramChatId,
                 'revoke_messages' => true,
             ]);
+
+            if ($response->successful()) {
+                // Unban inmediato para que sea un kick, no un ban permanente
+                Http::post("https://api.telegram.org/bot{$token}/unbanChatMember", [
+                    'chat_id'        => $chatId,
+                    'user_id'        => $telegramChatId,
+                    'only_if_banned' => true,
+                ]);
+            }
 
             return $response->successful();
         } catch (\Throwable $e) {
