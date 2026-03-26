@@ -210,3 +210,7 @@ You can access the built-in Backups dashboard from the Staff menu. It shows each
    sudo systemctl restart php8.5-fpm
    sudo php artisan queue:restart
    ```
+
+## 6. Cloud Backup Sync (Google Drive)
+
+The local backup system described above stores snapshots on the host filesystem. An optional rclone layer complements this by syncing those snapshots to an encrypted Google Drive remote (`gdrive_crypt:`), providing an off-site cold-backup tier. Syncs run via an ephemeral Docker container defined in `rclone_gdrive/docker-compose.yml` and can be automated with a cron job. For full setup and restore instructions, see [Google Drive Backup Sync](gdrive_backup_sync.md).

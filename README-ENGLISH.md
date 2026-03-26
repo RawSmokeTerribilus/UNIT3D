@@ -348,6 +348,92 @@ This is **not a core UNIT3D change** — it's a custom skin that respects the or
 
 ---
 
+### 9. **📡 Telegram Integration (Torrent Notification Bot)**
+
+**The Challenge**: UNIT3D has no native Telegram notification system. Operators have no way to automatically announce new torrents to a Telegram group or integrate bot-based user linking.
+
+**Our Solution**:
+
+```
+🤝 DEEP-LINK HANDSHAKE:
+  • User visits notification settings → gets a unique TRK- token
+  • Sends /start TRK-xxxx to the bot in Telegram
+  • Bot links their Telegram account to their tracker profile (lockForUpdate transaction)
+
+📢 QUEUED TORRENT NOTIFICATIONS:
+  • TorrentObserver fires when torrent status → APPROVED
+  • SendTelegramNotification job (3 tries, backoff: 10s / 60s / 300s)
+  • Rich message: poster, mediainfo (codec, resolution, audio, bitrate, framerate)
+  • Language flags (40+ languages), inline keyboard: IMDb / TMDb / Trailer / Download
+
+🚫 BAN → KICK:
+  • When a user is banned, BanController calls TelegramService::kickUser()
+  • kickUser() = banChatMember + immediate unbanChatMember (clean kick, not permanent ban)
+  • telegram_chat_id and telegram_token are cleared from the user record on ban
+
+🔗 GROUP INVITE:
+  • Bot sends group invite link on successful handshake
+  • Uses Http::asJson() to preserve + characters in invite URLs
+```
+
+**Required `.env` Variables**:
+
+| Variable | Purpose |
+|----------|---------|
+| `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
+| `TELEGRAM_GROUP_ID` | Supergroup ID (negative number, e.g. `-1001234567890`) |
+| `TELEGRAM_TOPIC_NOVEDADES` | Thread/topic ID for torrent announcements |
+| `TELEGRAM_BOT_USERNAME` | Bot @username (without @) |
+| `TELEGRAM_GROUP_INVITE_LINK` | Invite URL (`t.me/+xxxxx`) |
+
+**Full documentation**: See [`docs/TELEGRAM_INTEGRATION_GUIDE.md`](./docs/TELEGRAM_INTEGRATION_GUIDE.md)
+
+---
+
+### 10. **☁️ Google Drive Backup Sync (rclone + encryption)**
+
+**The Challenge**: Local cold backups protect against software failures, but hardware loss or server destruction destroys them too. A redundant encrypted cloud copy is essential for true disaster recovery.
+
+**Our Solution — Ephemeral rclone Container**:
+
+```
+📦 ARCHITECTURE:
+  • rclone_gdrive/docker-compose.yml runs rclone/rclone:latest
+  • Container mounts ./backups read-only → syncs to gdrive_crypt: remote
+  • Ephemeral: spins up, syncs, self-destructs (--rm)
+
+🔒 ENCRYPTION:
+  • gdrive_crypt: is an rclone crypt remote layered over Google Drive
+  • Filenames and contents encrypted at rest in the cloud
+  • Only the local rclone.conf (git-ignored) holds the decryption keys
+
+⚙️ SYNC OPTIONS:
+  • --transfers 4 / --checkers 8 (parallel performance)
+  • --drive-chunk-size 1024M (avoids timeout on large snapshots)
+  • --delete-after (cloud mirrors local: old snapshots pruned automatically)
+
+♻️ RESTORE:
+  • rclone_gdrive/scripts/restore_snapshot.sh (interactive)
+  • Lists cloud backups, prompts for target name, downloads + decrypts transparently
+  • Output written to: restauracion_emergencia/<snapshot_name>/
+```
+
+**How to trigger a sync**:
+
+```bash
+./rclone_gdrive/scripts/run_sync.sh
+# Logs: rclone_gdrive/logs/cron_wrapper.log
+#       rclone_gdrive/logs/sync_execution.log
+```
+
+**Cron example** (daily at 07:00):
+
+```bash
+0 7 * * * /home/rawserver/UNIT3D_Docker/rclone_gdrive/scripts/run_sync.sh
+```
+
+---
+
 ## 📦 Two Installation Paths
 
 ### **🚀 Path A: Fresh Install (New Tracker)**
@@ -490,6 +576,7 @@ Worker: Runs php artisan queue:work (background jobs)
 - `MAIL_PASSWORD` — SMTP credentials
 - `MEILISEARCH_KEY` — Search engine Master Key
 - `TMDB_API_KEY` — Third-party API access
+- `TELEGRAM_BOT_TOKEN` — Telegram bot authentication token
 
 **Never commit `.env`** to version control. Use `.env.example` as a template.
 
@@ -546,6 +633,20 @@ docker compose logs db
 # If corrupted, restore from backup
 # See "Path B: Restore from Backup" above
 ```
+
+### **Telegram: Webhook not receiving updates / 500 errors**
+
+```bash
+# Check worker is processing queued jobs
+docker compose logs worker | tail -20
+
+# Verify webhook route is registered
+docker compose exec -T app php artisan route:list | grep telegram
+```
+
+- **Webhook returns 500**: Confirm the webhook route excludes `throttle:api`, `auth:api`, and `banned` middleware — it is handled by `TelegramWebhookController` which bypasses auth.
+- **No notifications after approve**: Ensure the queue worker is running (`docker compose ps worker`) and `TELEGRAM_BOT_TOKEN` / `TELEGRAM_GROUP_ID` are set correctly in `.env`.
+- **`+` stripped from invite link**: Confirm `config/services.php` `group_invite_link` is populated and `TelegramService` uses `Http::asJson()` for `sendMessageWithButton`.
 
 ---
 

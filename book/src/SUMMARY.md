@@ -8,6 +8,8 @@
 - [Local Development MacOS](local_development_macos.md)
 - [SPANISH-Manual de Configuración](manual.md)
 - [Meilisearch Setup](meilisearch_setup.md)
+- [Telegram Integration](telegram_integration.md)
+- [Google Drive Backup Sync](gdrive_backup_sync.md)
 - [Server Management](server_management.md)
 - [Sharing Source Code](sharing_source_code.md)
 - [Torrent API](torrent_api.md)

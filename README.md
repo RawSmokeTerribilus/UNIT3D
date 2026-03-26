@@ -376,6 +376,104 @@ Optimizaciones en **config/other.php**:
 
 ---
 
+### 9. **📡 Integración con Telegram (Bot de Notificaciones)**
+
+**El Desafío**: UNIT3D no incluye ningún canal de notificaciones externo en tiempo real. Los usuarios no reciben alertas cuando se aprueba un torrent, y el staff no puede actuar sobre los miembros del grupo de Telegram directamente desde la plataforma.
+
+**Nuestra Solución**:
+
+```
+🤝 VINCULACIÓN DE CUENTA (Deep-Link Handshake):
+  • Cada usuario recibe un token único con formato TRK-XXXXXXXX al registrarse
+  • El usuario inicia /start TRK-xxx con el bot → se vincula su chat_id a su cuenta
+  • La transacción usa lockForUpdate() para evitar condiciones de carrera
+  • Ruta: POST /api/telegram/webhook (excluye throttle:api, auth:api, banned)
+
+📢 NOTIFICACIONES DE TORRENTS:
+  • TorrentObserver dispara SendTelegramNotification cuando status → APPROVED
+  • Job con colas ($tries=3, $backoff=[10,60,300], $timeout=30)
+  • Mensaje enriquecido: póster, mediainfo completo (codec, resolución, audio,
+    bitrate, framerate, ratio de aspecto, duración), banderas de idioma (40+ idiomas)
+  • Botones inline: IMDb / TMDb / Tráiler / Descargar
+
+🚫 BAN → EXPULSIÓN AUTOMÁTICA:
+  • Al banear un usuario en UNIT3D, BanController llama a TelegramService::kickUser()
+  • Implementación limpia: banChatMember + unbanChatMember inmediato (expulsión, no ban permanente)
+  • Se limpian telegram_chat_id y telegram_token del usuario baneado
+
+🔗 INVITACIÓN AL GRUPO:
+  • Los usuarios vinculados reciben el enlace de invitación al grupo vía bot
+  • El enlace se preserva íntegro usando Http::asJson() (mantiene el + en las URLs)
+
+🛠️ COMANDOS DEL BOT:
+  • /start TRK-xxx — vinculación de cuenta
+  • /status        — muestra si la cuenta está vinculada
+  • /help          — ayuda del bot
+```
+
+**Variables de Entorno Requeridas**:
+
+| Variable | Descripción |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Token del bot (obtenido de @BotFather) |
+| `TELEGRAM_GROUP_ID` | ID del supergrupo (número negativo, ej: -1001234567890) |
+| `TELEGRAM_TOPIC_NOVEDADES` | ID del hilo/topic para anuncios de torrents |
+| `TELEGRAM_BOT_USERNAME` | @username del bot sin la @ |
+| `TELEGRAM_GROUP_INVITE_LINK` | Enlace de invitación al grupo (t.me/+xxxxx) |
+
+**Resultado**: Los usuarios reciben notificaciones instantáneas de nuevos torrents directamente en Telegram, con póster e información técnica completa. Ver [`docs/TELEGRAM_INTEGRATION_GUIDE.md`](./docs/TELEGRAM_INTEGRATION_GUIDE.md) para la guía completa de configuración.
+
+---
+
+### 10. **☁️ Sincronización con Google Drive (rclone + cifrado)**
+
+**El Desafío**: Los snapshots locales del backup en frío quedan en el mismo servidor. Un fallo de disco o pérdida del host implica pérdida total de los backups.
+
+**Nuestra Solución - Sincronización Cifrada con Contenedor Efímero**:
+
+```
+🐳 PATRÓN EFÍMERO:
+  • Contenedor rclone/rclone:latest que se crea, sincroniza y destruye (--rm)
+  • Sin estado persistente: el contenedor no queda corriendo en segundo plano
+  • Orchestrado desde rclone_gdrive/docker-compose.yml
+
+🔐 CIFRADO TRANSPARENTE:
+  • Remote gdrive_crypt: cifra los archivos antes de subirlos a Google Drive
+  • La clave de cifrado reside en rclone_gdrive/config/rclone.conf (git-ignored)
+  • Los archivos en Drive son ilegibles sin la clave — privacidad garantizada
+
+⚙️ PARÁMETROS DE SINCRONIZACIÓN:
+  • --drive-chunk-size 1024M  (evita timeouts en archivos grandes)
+  • --transfers 4 / --checkers 8  (paralelismo controlado)
+  • --delete-after  (borra en destino solo si la subida fue exitosa)
+
+♻️ RESTAURACIÓN:
+  • rclone_gdrive/scripts/restore_snapshot.sh — interactivo
+  • Lista los backups disponibles en la nube, solicita el nombre del objetivo
+  • Descarga y desencripta automáticamente a restauracion_emergencia/
+
+📋 LOGS:
+  • rclone_gdrive/logs/sync_execution.log  (salida detallada de rclone)
+  • rclone_gdrive/logs/cron_wrapper.log    (registro de ejecuciones de cron)
+```
+
+**Uso**:
+
+```bash
+# Sincronización manual
+bash rclone_gdrive/scripts/run_sync.sh
+
+# Restaurar un snapshot desde la nube
+bash rclone_gdrive/scripts/restore_snapshot.sh
+
+# Automatizar con cron (ejemplo: diario a las 07:00)
+0 7 * * * /home/rawserver/UNIT3D_Docker/rclone_gdrive/scripts/run_sync.sh
+```
+
+**Resultado**: Los snapshots locales se sincronizan cifrados a Google Drive. La recuperación ante desastres funciona incluso si el servidor físico desaparece por completo.
+
+---
+
 ## 📦 Dos Rutas de Instalación
 
 ### **🚀 Ruta A: Instalación Fresca (Nuevo Tracker)**
@@ -518,6 +616,7 @@ Worker: Ejecuta php artisan queue:work (trabajos en segundo plano)
 - `MAIL_PASSWORD` — Credenciales SMTP
 - `MEILISEARCH_KEY` — Llave Maestra del motor de búsqueda
 - `TMDB_API_KEY` — Acceso a API de terceros
+- `TELEGRAM_BOT_TOKEN` — Token del bot de Telegram (acceso total a la API del bot)
 
 **Nunca comitees `.env`** al control de versiones. Usa `.env.example` como plantilla.
 
@@ -573,6 +672,19 @@ docker compose logs db
 
 # Si está corrupta, restaura desde el backup
 # Ver "Ruta B: Restaurar desde un Backup" arriba
+```
+
+### **Telegram: El bot no responde / Las notificaciones no llegan**
+
+```bash
+# Verificar que el worker está procesando jobs de Telegram
+docker compose logs worker | tail -20
+
+# Comprobar que la ruta del webhook está registrada correctamente
+docker compose exec -T app php artisan route:list | grep telegram
+
+# Verificar configuración del webhook con Telegram
+curl https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo
 ```
 
 ---
