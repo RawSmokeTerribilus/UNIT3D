@@ -575,6 +575,11 @@ Route::middleware('language')->group(function (): void {
                 Route::patch('/', [App\Http\Controllers\User\RsskeyController::class, 'update'])->name('update');
             });
 
+            // Telegram
+            Route::prefix('telegram')->name('telegram.')->group(function (): void {
+                Route::post('/reset-token', [App\Http\Controllers\User\TelegramController::class, 'resetToken'])->name('reset');
+            });
+
             // Apikey
             Route::prefix('apikeys')->name('apikeys.')->group(function (): void {
                 Route::get('/', [App\Http\Controllers\User\ApikeyController::class, 'index'])->name('index');
