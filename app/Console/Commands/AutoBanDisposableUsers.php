@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\Ban;
+use App\Models\DisposableEmailDomain;
 use App\Models\Group;
 use App\Models\User;
 use App\Notifications\UserBan;
@@ -50,55 +51,78 @@ class AutoBanDisposableUsers extends Command
      */
     final public function handle(): void
     {
-        if (!cache()->has(config('email-blacklist.cache-key'))) {
-            $this->comment('Email blacklist cache key not found. Skipping!');
-
-            return;
-        }
-
-        $bannedGroupId = Group::where('slug', '=', 'banned')->soleValue('id');
-
-        User::where('group_id', '!=', $bannedGroupId)->chunkById(100, function ($users) use ($bannedGroupId): void {
-            foreach ($users as $user) {
-                $v = validator([
-                    'email' => $user->email,
-                ], [
-                    'email' => [
-                        'required',
-                        'string',
-                        'email',
-                        'max:70',
-                        new EmailBlacklist(),
-                    ],
-                ]);
-
-                if ($v->fails()) {
-                    // If User Is Using A Disposable Email Set The Users Group To Banned
-                    $user->update([
-                        'group_id'     => $bannedGroupId,
-                        'can_download' => 0,
-                    ]);
-
-                    // Log The Ban To Ban Log
-                    $domain = substr((string) strrchr((string) $user->email, '@'), 1);
-
-                    $ban = Ban::create([
-                        'owned_by'     => $user->id,
-                        'created_by'   => User::SYSTEM_USER_ID,
-                        'ban_reason'   => 'Detected disposable email, '.$domain.' not allowed.',
-                        'unban_reason' => '',
-                    ]);
-
-                    // Send Email
-                    $user->notify(new UserBan($ban));
-                }
-
-                cache()->forget('user:'.$user->passkey);
-
-                Unit3dAnnounce::addUser($user);
+        try {
+            \Log::info('AutoBanDisposableUsers: Starting');
+            
+            // Check if blacklist is enabled
+            if (!config('email-blacklist.enabled')) {
+                $this->comment('Email blacklist is disabled. Skipping!');
+                \Log::info('AutoBanDisposableUsers: Email blacklist disabled, skipping');
+                return;
             }
-        });
 
-        $this->comment('Automated user banning command complete');
+            // Check if database has any domains
+            $domainCount = DisposableEmailDomain::count();
+            if ($domainCount === 0) {
+                $this->comment('No disposable domains in database. Run: php artisan email-blacklist:sync');
+                \Log::info('AutoBanDisposableUsers: No domains in DB, skipping');
+                return;
+            }
+
+            $bannedGroupId = Group::where('slug', '=', 'banned')->soleValue('id');
+            \Log::info('AutoBanDisposableUsers: Got banned group ID ' . $bannedGroupId);
+            \Log::info('AutoBanDisposableUsers: Loaded ' . $domainCount . ' blacklisted domains from DB');
+
+            $bannedCount = 0;
+            $usersProcessed = 0;
+            
+            // Get all non-banned users
+            $users = User::where('group_id', '!=', $bannedGroupId)->get();
+            \Log::info('AutoBanDisposableUsers: Processing ' . count($users) . ' users');
+
+            foreach ($users as $user) {
+                $usersProcessed++;
+                
+                try {
+                    // Extract domain from email (fast)
+                    $domain = strtolower(substr($user->email, strpos($user->email, '@') + 1));
+                    
+                    // Check if domain is disposable using DB model
+                    if (DisposableEmailDomain::isDisposable($domain)) {
+                        // Ban the user
+                        $user->update([
+                            'group_id'     => $bannedGroupId,
+                            'can_download' => 0,
+                        ]);
+
+                        Ban::create([
+                            'owned_by'     => $user->id,
+                            'created_by'   => User::SYSTEM_USER_ID,
+                            'ban_reason'   => 'Detected disposable email, ' . $domain . ' not allowed.',
+                            'unban_reason' => '',
+                        ]);
+
+                        $bannedCount++;
+                        \Log::info('AutoBanDisposableUsers: Banned ' . $user->username . ' (' . $domain . ')');
+                    }
+
+                    // Clear cache
+                    cache()->forget('user:'.$user->passkey);
+                    
+                } catch (\Throwable $e) {
+                    \Log::error('AutoBanDisposableUsers: Error #' . $usersProcessed, ['msg' => substr($e->getMessage(), 0, 100)]);
+                }
+            }
+
+            
+            \Log::info('AutoBanDisposableUsers: Complete - ' . $bannedCount . ' banned, ' . $usersProcessed . ' processed');
+            $this->comment('✅ Automated user banning complete');
+            $this->comment('   Processed: ' . $usersProcessed);
+            $this->comment('   Banned: ' . $bannedCount);
+            
+        } catch (\Throwable $e) {
+            \Log::error('AutoBanDisposableUsers: Fatal error', ['error' => $e->getMessage()]);
+            $this->error('Fatal error: ' . $e->getMessage());
+        }
     }
 }

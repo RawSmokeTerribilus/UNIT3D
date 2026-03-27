@@ -1,0 +1,138 @@
+```markdown
+# UNIT3D - Telegram Webhook Issue & Fix Plan
+
+## Resumen Ejecutivo
+
+**Problema:** El recuadro de vinculación Telegram de RawSmoke muestra "vincular con el bot" aunque se generó un token válido el 2026-03-27 11:46. Ayer se regeneró el token pero nunca completó el handshake.
+
+**Causa Raíz Identificada:** El webhook de Telegram nunca fue registrado. La API de Telegram devuelve:
+```json
+{"url": "", "pending_update_count": 0}
+```
+Sin URL registrada, Telegram nunca envía los mensajes `/start` del usuario al endpoint `/api/telegram/webhook`.
+
+**No es un bug de código** — el controlador `TelegramWebhookController` está implementado correctamente. Es un problema de **setup/configuración**.
+
+---
+
+## Diagrama del Problema
+
+| Componente | Estado |
+|-----------|--------|
+| BD - Token válido | ✅ `TRK-Hiw0gpaQAGD6vzaFGAedlrRKNYo2xiwT` |
+| BD - Chat ID | ✗ `NULL` (necesita webhook para linkarse) |
+| Código controlador | ✅ Implementado correc correctamente |
+| Ruta webhook (`/api/telegram/webhook`) | ✅ Declarada en `routes/api.php` |
+| **Webhook registrado en Telegram API** | ✗ **URL vacía** |
+| Request logs | ✗ Cero requests registrados al endpoint |
+
+---
+
+## Solución Propuesta: Opción 3 (Service Provider)
+
+### Estrategia: Staging → Prod
+
+1. **Crear comando Artisan** `telegram:set-webhook` con fault-tolerance
+2. **Testar en staging**
+3. **Merge a main sin ejecución automática**
+4. **Deploy a prod + ejecutar comando manualmente post-deploy**
+
+### Nivel de riesgo: BAJO
+- El comando es independiente (no se ejecuta automáticamente)
+- Ejecución manual y auditable
+- Rollback sencillo si es necesario
+
+### Archivos a crear/modificar:
+- `app/Console/Commands/SetTelegramWebhook.php` (nuevo)
+
+### Archivos a revisar:
+- `routes/api.php` (webhook ya está declarado)
+- `app/Http/Controllers/API/TelegramWebhookController.php` (está OK)
+- `config/services.php` (tiene credenciales de Telegram)
+
+---
+
+## Pasos Siguientes
+
+1. **Implement & Test en Staging:**
+   - Crear comando con reintentos y timeout management
+   - Ejecutar: `php artisan telegram:set-webhook`
+   - Verificar: `curl "https://api.telegram.org/bot{TOKEN}/getWebhookInfo"`
+
+2. **Deploy a Prod:**
+   - Merge del comando a main
+   - Deploy normal
+   - Post-deploy ejecutar manualmente en prod
+
+3. **Verificar:**
+   - RawSmoke intenta linkarse con nuevo token
+   - Telegram envía `/start` webhook
+   - BD se actualiza: `telegram_chat_id` recibe el valor correcto
+
+---
+
+## Checklist Post-Deploy (Futuro)
+
+- [ ] `php artisan telegram:set-webhook` ejecutado exitosamente
+- [ ] Verificar `getWebhookInfo` con curl
+- [ ] Usuario intenta linkear y recibe "✅ Handshake Successful"
+- [ ] BD muestra `telegram_chat_id` con valor
+
+---
+
+## Archivos Investigados
+
+**Webhook handler:** `app/Http/Controllers/API/TelegramWebhookController.php` (líneas 41-88 — **perfecto**)
+
+**Token reset:** `app/Http/Controllers/User/TelegramController.php` (genera nuevo token correctamente)
+
+**UI:** `resources/views/user/profile/partials/telegram_settings.blade.php` (muestra estado correcto basado en DB)
+
+**Rutas:** `routes/api.php` línea 61 (endpoint sin auth, como debe ser)
+
+**Config:** `config/services.php` (tiene TOKEN, BOT_USERNAME, GROUP_ID, etc.)
+
+---
+
+## Notas
+
+- El error del 2026-03-26 en `GenerateTelegramTokens.php` línea 40 es un bug aparte (`.count()` en un boolean)
+- No hay logs de webhook porque Telegram nunca contacta (URL vacía)
+- El token de RawSmoke es válido y sigue en BD, solo necesita el webhook registrado
+```
+
+---
+
+## Prompt para el nuevo chat:
+
+```markdown
+# Contexto: Solucionar Telegram Webhook en UNIT3D
+
+Necesito implementar la Opción 3 (Service Provider) para registrar el webhook de Telegram automáticamente en Laravel.
+
+**Situación:**
+- Workspace: `/home/rawserver/UNIT3D_Docker`
+- Repo: UNIT3D (RawSmokeTerribilus/UNIT3D, rama main)
+- Ambiente: Production + Staging para testear
+- Usuario afectado: RawSmoke (telegram_chat_id = NULL, token válido pero nunca completó handshake)
+
+**Lo que necesito:**
+1. Crear `app/Console/Commands/SetTelegramWebhook.php`
+   - Comando manual `php artisan telegram:set-webhook`
+   - Con fault-tolerance (timeout, reintentos, error handling)
+   - Llama a Telegram API `/setWebhook` con URL `{APP_URL}/api/telegram/webhook`
+   
+2. Verificación:
+   - Probarlo en staging primero
+   - Confirmar que es seguro ejecutar en prod
+
+3. Documentación:
+   - Crear un checklist post-deploy
+
+**Instrucción:**
+- SOLO lectura y creación de archivos (NO modificaciones de código existente)
+- Implementación defensiva (no puede romper la app si falla)
+- Auditable y fácil de rollback
+```
+
+Listo para copiar y pegar en el nuevo chat. ¿Lo guardas o ya lo tienes?

@@ -72,8 +72,6 @@
                 @livewire('bbcode-input', ['name' => 'about', 'label' => __('user.about-me'), 'required' => false, 'content' => old('about', $user->about)], key('about'))
                 @livewire('bbcode-input', ['name' => 'signature', 'label' => __('user.forum-signature'), 'required' => false, 'content' => old('signature', $user->signature)], key('signature'))
 
-                @include('user.profile.partials.telegram_settings')
-
                 <p class="form__group">
                     <button class="form__button form__button--filled">
                         {{ __('common.submit') }}
@@ -82,4 +80,6 @@
             </form>
         </div>
     </section>
+
+    @include('partials.telegram_settings')
 @endsection

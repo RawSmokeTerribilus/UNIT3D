@@ -52,6 +52,6 @@ COPY .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY .docker/php/entrypoint-scheduler.sh /usr/local/bin/entrypoint-scheduler.sh
 COPY .docker/php/entrypoint-worker.sh /usr/local/bin/entrypoint-worker.sh
 
-RUN chmod +x /usr/local/bin/entrypoint-scheduler.sh /usr/local/bin/entrypoint-worker.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/entrypoint-scheduler.sh /usr/local/bin/entrypoint-worker.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

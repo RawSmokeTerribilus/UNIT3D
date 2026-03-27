@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use AllowDynamicProperties;
+use Laravel\Scout\Searchable;
 
 /**
  * App\Models\TmdbPerson.
@@ -48,6 +49,7 @@ final class TmdbPerson extends Model
 {
     /** @use HasFactory<\Database\Factories\TmdbPersonFactory> */
     use HasFactory;
+    use Searchable;
 
     protected $guarded = [];
 
@@ -332,5 +334,18 @@ final class TmdbPerson extends Model
             ->wherePivot('occupation_id', '=', Occupation::ACTOR)
             ->withPivot('character', 'occupation_id')
             ->as('credit');
+    }
+
+    /**
+     * Get the searchable data array.
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id'       => $this->id,
+            'name'     => $this->name,
+            'birthday' => $this->birthday,
+            'still'    => $this->still,
+        ];
     }
 }

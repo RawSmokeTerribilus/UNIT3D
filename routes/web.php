@@ -818,15 +818,51 @@ Route::middleware('language')->group(function (): void {
             // Commands
             Route::prefix('commands')->middleware('owner')->group(function (): void {
                 Route::get('/', [App\Http\Controllers\Staff\CommandController::class, 'index'])->name('commands.index');
+                
+                // EMERGENCY: Kill-switch to disable maintenance mode (always accessible, even during maintenance)
+                Route::get('/emergency-disable-maintenance', function () {
+                    $downFile = storage_path('framework/down');
+                    if (file_exists($downFile)) {
+                        @unlink($downFile);
+                    }
+                    return to_route('staff.commands.index')->with('info', '🚨 EMERGENCY: Maintenance mode forcefully disabled');
+                });
+
+                // Maintenance & Site Control
                 Route::post('/maintenance-enable', [App\Http\Controllers\Staff\CommandController::class, 'maintenanceEnable']);
                 Route::post('/maintenance-disable', [App\Http\Controllers\Staff\CommandController::class, 'maintenanceDisable']);
+
+                // Caching & Performance
                 Route::post('/clear-cache', [App\Http\Controllers\Staff\CommandController::class, 'clearCache']);
                 Route::post('/clear-view-cache', [App\Http\Controllers\Staff\CommandController::class, 'clearView']);
                 Route::post('/clear-route-cache', [App\Http\Controllers\Staff\CommandController::class, 'clearRoute']);
                 Route::post('/clear-config-cache', [App\Http\Controllers\Staff\CommandController::class, 'clearConfig']);
                 Route::post('/clear-all-cache', [App\Http\Controllers\Staff\CommandController::class, 'clearAllCache']);
                 Route::post('/set-all-cache', [App\Http\Controllers\Staff\CommandController::class, 'setAllCache']);
+                Route::post('/flush-queue', [App\Http\Controllers\Staff\CommandController::class, 'flushQueue']);
+                Route::post('/optimize-clear', [App\Http\Controllers\Staff\CommandController::class, 'optimizeClear']);
+
+                // Critical Data Operations
+                Route::post('/update-email-blacklist', [App\Http\Controllers\Staff\CommandController::class, 'updateEmailBlacklist']);
+                Route::post('/telegram-webhook', [App\Http\Controllers\Staff\CommandController::class, 'setTelegramWebhook']);
+                Route::post('/meilisearch-fix', [App\Http\Controllers\Staff\CommandController::class, 'fixMeilisearch']);
+                Route::post('/scout-reindex', [App\Http\Controllers\Staff\CommandController::class, 'reindexScout']);
+                Route::post('/clean-failed-logins', [App\Http\Controllers\Staff\CommandController::class, 'cleanFailedLogins']);
+
+                // Peer & Torrent Management
+                Route::post('/flush-old-peers', [App\Http\Controllers\Staff\CommandController::class, 'flushOldPeers']);
+                Route::post('/reset-user-flushes', [App\Http\Controllers\Staff\CommandController::class, 'resetUserFlushes']);
+                Route::post('/sync-peers', [App\Http\Controllers\Staff\CommandController::class, 'syncPeers']);
+                Route::post('/sync-torrents-meilisearch', [App\Http\Controllers\Staff\CommandController::class, 'syncTorrents']);
+
+                // User & Cleanup
+                Route::post('/ban-disposable-users', [App\Http\Controllers\Staff\CommandController::class, 'banDisposableUsers']);
+                Route::post('/deactivate-warnings', [App\Http\Controllers\Staff\CommandController::class, 'deactivateWarnings']);
+                Route::post('/generate-telegram-tokens', [App\Http\Controllers\Staff\CommandController::class, 'generateTelegramTokens']);
+
+                // Testing & Utilities
                 Route::post('/test-email', [App\Http\Controllers\Staff\CommandController::class, 'testEmail']);
+                Route::post('/storage-link', [App\Http\Controllers\Staff\CommandController::class, 'createStorageLink']);
             });
 
             // Distributors

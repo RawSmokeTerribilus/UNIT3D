@@ -12,6 +12,8 @@ help:
 	@echo "make health   - Verificar salud HTTP (Puerto 8008)"
 	@echo "make logs     - Ver logs de la app en vivo"
 	@echo "make clean    - Limpiar caché de Laravel (Producción)"
+	@echo "make meilisearch - Configurar Meilisearch (Staging)"
+	@echo "make meilisearch-fix - Reparar Meilisearch de cero (Staging)"
 
 install:
 	@echo "🎬 Inicializando el búnker..."
@@ -34,10 +36,10 @@ status:
 	docker compose ps
 
 backup:
-	./backup.sh
+	sudo ./backup.sh
 
 health:
-	./health_check.sh
+	sudo ./health_check.sh
 
 logs:
 	docker compose logs -f app
@@ -49,3 +51,16 @@ clean:
 	docker exec unit3d-app php artisan config:cache
 	docker exec unit3d-app php artisan route:cache
 	docker exec unit3d-app php artisan view:cache
+
+meilisearch:
+	@echo "⚙️  Configurando Meilisearch (Staging)..."
+	bash ./NO_BS_meilisearch.sh staging
+
+meilisearch-fix:
+	@echo "🔧 Reparando Meilisearch de cero (Staging)..."
+	docker compose stop meilisearch
+	sudo rm -rf .docker/data/meilisearch
+	docker compose up -d meilisearch
+	@echo "⏳ Esperando a que Meilisearch inicie..."
+	sleep 5
+	bash ./NO_BS_meilisearch.sh staging

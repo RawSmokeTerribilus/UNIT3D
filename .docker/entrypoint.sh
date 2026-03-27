@@ -57,6 +57,31 @@ php artisan migrate --force --schema-path=/dev/null || php artisan migrate --for
 echo "Actualizando Blacklist de Emails..."
 php artisan auto:email-blacklist-update
 
+# === MEILISEARCH DUAL-INDEX AUTO-CONFIGURATION ===
+echo "Waiting for Meilisearch service..."
+MEILISEARCH_READY=0
+MEILISEARCH_RETRIES=0
+while [ $MEILISEARCH_READY -eq 0 ] && [ $MEILISEARCH_RETRIES -lt 30 ]; do
+    if wget -q -O- http://meilisearch:7700/health 2>/dev/null | grep -q '"status":"available"'; then
+        MEILISEARCH_READY=1
+        echo "✓ Meilisearch is available. Configuring dual indexes (torrents + people)..."
+        # Ejecutar script de configuración
+        if sh ./NO_BS_meilisearch.sh > /tmp/meilisearch-config.log 2>&1; then
+            echo "✓ Meilisearch configuration completed successfully"
+        else
+            echo "⚠️  Meilisearch configuration completed with warnings (check logs: /tmp/meilisearch-config.log)"
+        fi
+    else
+        MEILISEARCH_RETRIES=$((MEILISEARCH_RETRIES + 1))
+        sleep 1
+    fi
+done
+
+if [ $MEILISEARCH_READY -eq 0 ]; then
+    echo "⚠️  Meilisearch failed to respond after 30s - skipping auto-configuration"
+    echo "   Manual recovery: docker compose restart app && make meilisearch"
+fi
+
 # 2. Ajuste masivo de permisos (0775)
 # Esto cubre: vendor, storage, public y bootstrap/cache
 echo "Ajustando permisos a 775 en carpetas críticas..."
