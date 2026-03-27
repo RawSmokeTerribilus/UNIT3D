@@ -34,7 +34,7 @@ status:
 	docker compose ps
 
 backup:
-	./backup.sh
+	sudo ./backup.sh
 
 health:
 	./health_check.sh
