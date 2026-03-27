@@ -81,6 +81,16 @@ curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 
 The response should show `"url"` set to your endpoint and `"pending_update_count": 0`.
 
+### Automatic Registration (Post-Deploy)
+
+Instead of manual `curl`, use the Artisan command:
+
+```sh
+php artisan telegram:set-webhook
+```
+
+This validates configuration, handles `setWebhook` API calls, and provides error feedback. Use `--test` to check current webhook status without modifying. **Run this once after deploy or when `.env` changes.**
+
 > [!IMPORTANT]
 > The webhook route at `POST /api/telegram/webhook` intentionally excludes the `throttle:api`, `auth:api`, and `banned` middleware. Telegram's servers must be able to reach it without authentication.
 

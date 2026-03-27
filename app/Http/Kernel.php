@@ -32,7 +32,7 @@ class Kernel extends HttpKernel
     protected $middleware = [
         // Default Laravel
         \Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks::class,
-        \Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        \App\Http\Middleware\PreventRequestsDuringMaintenanceExceptStaff::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \Illuminate\Foundation\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
