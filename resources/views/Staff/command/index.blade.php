@@ -1,11 +1,11 @@
 @extends('layout.with-main')
 
 @section('title')
-    <title>Commands - {{ __('staff.staff-dashboard') }} - {{ config('other.title') }}</title>
+    <title>Comandos - {{ __('staff.staff-dashboard') }} - {{ config('other.title') }}</title>
 @endsection
 
 @section('meta')
-    <meta name="description" content="Commands - {{ __('staff.staff-dashboard') }}" />
+    <meta name="description" content="Comandos - {{ __('staff.staff-dashboard') }}" />
 @endsection
 
 @section('breadcrumbs')
@@ -14,7 +14,7 @@
             {{ __('staff.staff-dashboard') }}
         </a>
     </li>
-    <li class="breadcrumb--active">Commands</li>
+    <li class="breadcrumb--active">Comandos</li>
 @endsection
 
 @section('page', 'page__staff-command--index')
@@ -50,13 +50,13 @@
             border-left: 4px solid #c0392b;
         "
     >
-        <strong>🚨 EMERGENCY ESCAPE HATCH:</strong> If you're stuck in maintenance mode, visit:
+        <strong>🚨 SALIDA DE EMERGENCIA:</strong> Si te quedas atrapado en modo mantenimiento, visita:
         <br />
         <code style="background: rgba(0,0,0,0.3); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">
             /dashboard/commands/emergency-disable-maintenance
         </code>
         <br />
-        <small>This endpoint is ALWAYS accessible and will forcefully disable maintenance mode.</small>
+        <small>Este endpoint SIEMPRE está accesible y desactiva el modo mantenimiento a la fuerza.</small>
     </div>
 
     <div
@@ -68,16 +68,16 @@
     >
         {{-- Maintenance & Site Control Panel --}}
         <section class="panelV2">
-            <h2 class="panel__heading">🛡️ Maintenance & Site Control</h2>
+            <h2 class="panel__heading">🛡️ Mantenimiento y Control del Sitio</h2>
             <div class="panel__body">
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/maintenance-enable') }}">
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Enable maintenance mode (site accessible only with your IP)"
+                            title="Activar modo mantenimiento (sitio accesible solo con tu IP)"
                         >
-                            Enable maintenance
+                            Activar mantenimiento
                         </button>
                     </form>
                 </div>
@@ -86,9 +86,9 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Disable maintenance mode and enable public access"
+                            title="Desactivar modo mantenimiento y abrir acceso público"
                         >
-                            Disable maintenance
+                            Desactivar mantenimiento
                         </button>
                     </form>
                 </div>
@@ -97,53 +97,53 @@
 
         {{-- Caching & Performance Panel --}}
         <section class="panelV2">
-            <h2 class="panel__heading">⚡ Caching & Performance</h2>
+            <h2 class="panel__heading">⚡ Caché y Rendimiento</h2>
             <div class="panel__body">
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/clear-cache') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Clear application cache">
-                            Clear cache
+                        <button class="form__button form__button--text" title="Limpiar caché de la aplicación">
+                            Limpiar caché
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/clear-view-cache') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Clear compiled views cache">
-                            Clear views
+                        <button class="form__button form__button--text" title="Limpiar caché de vistas compiladas">
+                            Limpiar vistas
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/clear-route-cache') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Clear compiled routes cache">
-                            Clear routes
+                        <button class="form__button form__button--text" title="Limpiar caché de rutas compiladas">
+                            Limpiar rutas
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/clear-config-cache') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Clear configuration cache">
-                            Clear config
+                        <button class="form__button form__button--text" title="Limpiar caché de configuración">
+                            Limpiar config
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/clear-all-cache') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Clear ALL cache at once">
-                            Clear all cache
+                        <button class="form__button form__button--text" title="Limpiar TODA la caché de golpe">
+                            Limpiar toda la caché
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/set-all-cache') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Rebuild and set all cache">
-                            Set all cache
+                        <button class="form__button form__button--text" title="Reconstruir y fijar toda la caché">
+                            Fijar toda la caché
                         </button>
                     </form>
                 </div>
@@ -152,18 +152,18 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Clear Redis queue (CRITICAL after token changes)"
+                            title="Vaciar cola Redis (CRÍTICO tras cambios de token)"
                             style="background-color: #e74c3c; color: white;"
                         >
-                            🔴 Flush Redis queue
+                            🔴 Vaciar cola Redis
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/optimize-clear') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Clear optimization cache">
-                            Clear optimize
+                        <button class="form__button form__button--text" title="Limpiar caché de optimización">
+                            Limpiar optimización
                         </button>
                     </form>
                 </div>
@@ -173,7 +173,7 @@
         {{-- Critical Data Operations Panel --}}
         <section class="panelV2" style="grid-column: span 1">
             <h2 class="panel__heading" style="background: #e74c3c; color: white; padding: 0.5rem;">
-                🔴 CRITICAL Data Operations
+                🔴 Operaciones de Datos CRÍTICAS
             </h2>
             <div class="panel__body">
                 <div class="form__group form__group--horizontal">
@@ -181,10 +181,10 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Update email domain blacklist from remote source"
+                            title="Actualizar lista negra de emails desde fuente remota"
                             style="background-color: #e74c3c; color: white;"
                         >
-                            Update email blacklist
+                            Actualizar lista negra emails
                         </button>
                     </form>
                 </div>
@@ -193,10 +193,10 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Register Telegram bot webhook with API"
+                            title="Registrar webhook del bot Telegram con la API"
                             style="background-color: #3498db; color: white;"
                         >
-                            Register Telegram
+                            Registrar Telegram
                         </button>
                     </form>
                 </div>
@@ -205,10 +205,10 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Flush and repair Meilisearch indices"
+                            title="Vaciar y reparar índices de Meilisearch"
                             style="background-color: #f39c12; color: white;"
                         >
-                            Flush Meilisearch
+                            Vaciar Meilisearch
                         </button>
                     </form>
                 </div>
@@ -217,10 +217,26 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Reindex all torrents in Meilisearch"
+                            title="Reindexar todos los torrents en Meilisearch"
                             style="background-color: #f39c12; color: white;"
                         >
-                            Reindex Meilisearch
+                            Reindexar Meilisearch
+                        </button>
+                    </form>
+                </div>
+                <div class="form__group form__group--horizontal">
+                    <form
+                        method="POST"
+                        action="{{ url('/dashboard/commands/meilisearch-full-repair') }}"
+                        onsubmit="return confirm('⚠️ REPARACIÓN COMPLETA DE MEILISEARCH\n\nEsto va a:\n1. Verificar salud de Meilisearch\n2. Crear índices si faltan\n3. Sincronizar filtros/ordenación\n4. BORRAR + reindexar TODOS los torrents\n5. BORRAR + reindexar TODAS las personas\n6. Validar configuración\n\n⏱️ Puede tardar varios minutos.\n🔄 Puede que necesites reiniciar Meilisearch desde Portainer después.\n\n¿Continuar?')"
+                    >
+                        @csrf
+                        <button
+                            class="form__button form__button--text"
+                            title="Reparación completa: salud + crear índices + sincronizar config + reindexar torrents y personas + validar (equiv. a NO_BS_meilisearch.sh)"
+                            style="background-color: #e74c3c; color: white; font-weight: bold;"
+                        >
+                            🔧 Reparación completa Meilisearch
                         </button>
                     </form>
                 </div>
@@ -229,10 +245,10 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Delete ALL failed login attempts (DB only, logs preserved)"
+                            title="Eliminar TODOS los intentos de login fallidos (solo BD, logs se mantienen)"
                             style="background-color: #95a5a6;"
                         >
-                            Clean failed logins
+                            Limpiar logins fallidos
                         </button>
                     </form>
                 </div>
@@ -241,13 +257,13 @@
 
         {{-- Peer & Torrent Management Panel --}}
         <section class="panelV2">
-            <h2 class="panel__heading">🌱 Peer & Torrent Management</h2>
+            <h2 class="panel__heading">🌱 Gestión de Peers y Torrents</h2>
             <div class="panel__body">
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/flush-old-peers') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Auto-flush peers inactive > 2 hours">
-                            Flush old peers
+                        <button class="form__button form__button--text" title="Auto-limpiar peers inactivos > 2 horas">
+                            Limpiar peers viejos
                         </button>
                     </form>
                 </div>
@@ -256,25 +272,25 @@
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Reset daily peer flush quota for all users"
+                            title="Resetear cuota diaria de flush de peers para todos los usuarios"
                         >
-                            Reset user flushes
+                            Resetear flushes de usuarios
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/sync-peers') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Sync peer data and consistency">
-                            Sync peers
+                        <button class="form__button form__button--text" title="Sincronizar datos de peers y consistencia">
+                            Sincronizar peers
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/sync-torrents-meilisearch') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Sync torrents to Meilisearch">
-                            Sync torrents
+                        <button class="form__button form__button--text" title="Sincronizar torrents en Meilisearch">
+                            Sincronizar torrents
                         </button>
                     </form>
                 </div>
@@ -283,32 +299,32 @@
 
         {{-- User & Cleanup Panel --}}
         <section class="panelV2">
-            <h2 class="panel__heading">👥 User & Cleanup</h2>
+            <h2 class="panel__heading">👥 Usuarios y Limpieza</h2>
             <div class="panel__body">
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/ban-disposable-users') }}">
                         @csrf
                         <button
                             class="form__button form__button--text"
-                            title="Ban users with disposable email addresses"
+                            title="Banear usuarios con emails desechables"
                         >
-                            Ban disposable users
+                            Banear usuarios desechables
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/deactivate-warnings') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Deactivate expired user warnings">
-                            Deactivate warnings
+                        <button class="form__button form__button--text" title="Desactivar avisos de usuario expirados">
+                            Desactivar avisos
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/generate-telegram-tokens') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Generate Telegram verification tokens">
-                            Gen. Telegram tokens
+                        <button class="form__button form__button--text" title="Generar tokens de verificación Telegram">
+                            Generar tokens Telegram
                         </button>
                     </form>
                 </div>
@@ -317,21 +333,21 @@
 
         {{-- Testing & Utilities Panel --}}
         <section class="panelV2">
-            <h2 class="panel__heading">🔧 Testing & Utilities</h2>
+            <h2 class="panel__heading">🔧 Pruebas y Utilidades</h2>
             <div class="panel__body">
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/test-email') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Send test email">
-                            Test email
+                        <button class="form__button form__button--text" title="Enviar email de prueba">
+                            Email de prueba
                         </button>
                     </form>
                 </div>
                 <div class="form__group form__group--horizontal">
                     <form method="POST" action="{{ url('/dashboard/commands/storage-link') }}">
                         @csrf
-                        <button class="form__button form__button--text" title="Create public storage symlink">
-                            Storage link
+                        <button class="form__button form__button--text" title="Crear enlace simbólico de almacenamiento público">
+                            Enlace storage
                         </button>
                     </form>
                 </div>

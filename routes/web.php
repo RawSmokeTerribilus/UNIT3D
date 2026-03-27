@@ -847,6 +847,7 @@ Route::middleware('language')->group(function (): void {
                 Route::post('/telegram-webhook', [App\Http\Controllers\Staff\CommandController::class, 'setTelegramWebhook']);
                 Route::post('/meilisearch-fix', [App\Http\Controllers\Staff\CommandController::class, 'fixMeilisearch']);
                 Route::post('/scout-reindex', [App\Http\Controllers\Staff\CommandController::class, 'reindexScout']);
+                Route::post('/meilisearch-full-repair', [App\Http\Controllers\Staff\CommandController::class, 'meilisearchFullRepair']);
                 Route::post('/clean-failed-logins', [App\Http\Controllers\Staff\CommandController::class, 'cleanFailedLogins']);
 
                 // Peer & Torrent Management

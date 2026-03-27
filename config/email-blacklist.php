@@ -108,9 +108,9 @@ return [
     | Legacy Configuration (Backward Compatibility)
     |--------------------------------------------------------------------------
     */
-    'source'    => null, // Deprecated, use remote_sources instead
+    'source'    => 'https://cdn.jsdelivr.net/gh/andreis/disposable-email-domains@master/domains.json',
     'cache-key' => 'email.domains.blacklist',
-    'append'    => null, // Deprecated, use custom_domains instead
+    'append'    => null,
 
     /*
     |--------------------------------------------------------------------------

@@ -46,13 +46,8 @@ class CleanFailedLoginAttempts extends Command
         try {
             if ($this->option('all')) {
                 $count = FailedLoginAttempt::query()->count();
-                
-                if ($this->confirm("Are you sure you want to DELETE ALL {$count} failed login records?", false)) {
-                    FailedLoginAttempt::query()->truncate();
-                    $this->info("✅ All {$count} failed login attempts deleted.");
-                } else {
-                    $this->warn("Operation cancelled.");
-                }
+                FailedLoginAttempt::query()->truncate();
+                $this->info("✅ All {$count} failed login attempts deleted.");
             } else {
                 $days = (int) $this->option('days');
                 $count = FailedLoginAttempt::query()

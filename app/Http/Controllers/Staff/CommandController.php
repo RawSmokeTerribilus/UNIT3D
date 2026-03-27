@@ -183,6 +183,15 @@ class CommandController extends Controller
     }
 
     /**
+     * Full Meilisearch Repair (equivalent to NO_BS_meilisearch.sh steps 1-5).
+     * Health check → create indices → sync settings → reindex torrents + people → validate.
+     */
+    public function meilisearchFullRepair(): \Illuminate\Http\RedirectResponse
+    {
+        return $this->executeArtisanSafely('meilisearch:full-repair', ['--force' => true]);
+    }
+
+    /**
      * Clean Failed Login Attempts (Manual cleanup, DB only).
      */
     public function cleanFailedLogins(): \Illuminate\Http\RedirectResponse
